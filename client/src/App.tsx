@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { AdminRoute } from "./lib/admin-route";
 import Navbar from "./components/layout/navbar";
 import Footer from "./components/layout/footer";
 import HomePage from "./pages/home-page";
@@ -27,8 +28,8 @@ function Router() {
       <Route path="/restaurants" component={RestaurantsPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/bookmarks" component={BookmarksPage} />
-      <ProtectedRoute path="/admin" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/articles" component={AdminArticles} />
+      <AdminRoute path="/admin" component={AdminDashboard} />
+      <AdminRoute path="/admin/articles" component={AdminArticles} />
       <Route component={NotFound} />
     </Switch>
   );
