@@ -22,8 +22,8 @@ export function AdminRoute({
     });
 
     if (!isLoading && (!user || !user.isAdmin)) {
-      console.log('管理者権限がないため、リダイレクトします');
-      setLocation("/");
+      console.log('管理者権限がないため、管理者ログインページにリダイレクトします');
+      setLocation("/admin/login");
     }
   }, [user, isLoading, setLocation, path]);
 
