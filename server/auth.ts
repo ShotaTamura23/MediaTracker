@@ -106,7 +106,8 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.post("/api/login", (req, res, next) => {
+  // Admin login endpoint
+  app.post("/api/admin/login", (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
       if (err) {
         return next(err);
@@ -114,8 +115,24 @@ export function setupAuth(app: Express) {
       if (!user) {
         return res.status(401).send(info?.message || "認証に失敗しました");
       }
-      if (req.path.startsWith("/admin") && !user.isAdmin) {
+      if (!user.isAdmin) {
         return res.status(403).send("管理者権限がありません");
+      }
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(200).json(user);
+      });
+    })(req, res, next);
+  });
+
+  // Regular login endpoint
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).send(info?.message || "認証に失敗しました");
       }
       req.login(user, (err) => {
         if (err) return next(err);
