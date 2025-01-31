@@ -23,6 +23,11 @@ async function hashPassword(password: string) {
 
 async function comparePasswords(supplied: string, stored: string) {
   const hashedSupplied = await hashPassword(supplied);
+  console.log('Password comparison:', {
+    supplied: hashedSupplied,
+    stored: stored,
+    matches: hashedSupplied === stored
+  });
   return hashedSupplied === stored;
 }
 
@@ -55,12 +60,20 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log('Attempting login for username:', username);
         const [user] = await getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
+          console.log('User not found');
+          return done(null, false, { message: "ユーザー名またはパスワードが正しくありません" });
+        }
+        const isValidPassword = await comparePasswords(password, user.password);
+        console.log('Password validation:', isValidPassword);
+        if (!isValidPassword) {
           return done(null, false, { message: "ユーザー名またはパスワードが正しくありません" });
         }
         return done(null, user);
       } catch (err) {
+        console.error('Login error:', err);
         return done(err);
       }
     }),
@@ -108,18 +121,23 @@ export function setupAuth(app: Express) {
 
   // Admin login endpoint
   app.post("/api/admin/login", (req, res, next) => {
+    console.log('Admin login attempt for:', req.body.username);
     passport.authenticate("local", (err, user, info) => {
       if (err) {
+        console.error('Admin login error:', err);
         return next(err);
       }
       if (!user) {
+        console.log('Admin login failed: Invalid credentials');
         return res.status(401).send(info?.message || "認証に失敗しました");
       }
       if (!user.isAdmin) {
+        console.log('Admin login failed: Not an admin user');
         return res.status(403).send("管理者権限がありません");
       }
       req.login(user, (err) => {
         if (err) return next(err);
+        console.log('Admin login successful');
         res.status(200).json(user);
       });
     })(req, res, next);
