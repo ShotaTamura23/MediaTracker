@@ -34,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
+      if (!res.ok) {
+        throw new Error("ログインに失敗しました");
+      }
       return res.json();
     },
     onSuccess: (user) => {
@@ -55,6 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
+      if (!res.ok) {
+        throw new Error("アカウント作成に失敗しました");
+      }
       return res.json();
     },
     onSuccess: (user) => {
