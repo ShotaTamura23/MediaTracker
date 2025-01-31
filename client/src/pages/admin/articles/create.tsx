@@ -37,6 +37,16 @@ const createArticleSchema = insertArticleSchema.omit({
   updatedAt: true,
 });
 
+const defaultEditorContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [{ type: "text", text: "" }]
+    }
+  ]
+};
+
 export default function CreateArticlePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -48,7 +58,7 @@ export default function CreateArticlePage() {
     defaultValues: {
       title: "",
       slug: "",
-      content: { type: "doc", content: [] },
+      content: defaultEditorContent,
       excerpt: "",
       coverImage: "",
       type: "essay",
