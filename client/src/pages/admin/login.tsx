@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const loginSchema = z.object({
   username: z.string().min(1, "ユーザー名を入力してください"),
@@ -28,7 +29,7 @@ const loginSchema = z.object({
 });
 
 export default function AdminLoginPage() {
-  const { loginMutation } = useAuth();
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -42,9 +43,14 @@ export default function AdminLoginPage() {
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
-      const user = await loginMutation.mutateAsync(data);
+      const res = await apiRequest("POST", "/api/admin/login", data);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "ログインに失敗しました");
+      }
+      const user = await res.json();
       if (user.isAdmin) {
-        setLocation("/admin");
+        window.location.href = "/admin"; // Force a full page reload
       } else {
         toast({
           title: "アクセス権限がありません",
@@ -54,9 +60,19 @@ export default function AdminLoginPage() {
         form.reset();
       }
     } catch (error) {
-      // エラーハンドリングはmutationで行われます
+      toast({
+        title: "ログインに失敗しました",
+        description: error instanceof Error ? error.message : "認証に失敗しました",
+        variant: "destructive",
+      });
     }
   };
+
+  // If already logged in as admin, redirect to admin dashboard
+  if (user?.isAdmin) {
+    setLocation("/admin");
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/50">
@@ -102,7 +118,7 @@ export default function AdminLoginPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loginMutation.isPending}
+                disabled={form.formState.isSubmitting}
               >
                 ログイン
               </Button>
