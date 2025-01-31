@@ -8,6 +8,7 @@ import { insertArticleSchema, type InsertArticle } from "@db/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import TipTapEditor from "@/components/editor/tiptap-editor";
 import {
   Form,
   FormControl,
@@ -29,7 +30,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
-// Zodスキーマから不要なフィールドを除外
 const createArticleSchema = insertArticleSchema.omit({
   id: true,
   authorId: true,
@@ -48,7 +48,7 @@ export default function CreateArticlePage() {
     defaultValues: {
       title: "",
       slug: "",
-      content: { blocks: [] },
+      content: { type: "doc", content: [] },
       excerpt: "",
       coverImage: "",
       type: "essay",
@@ -134,6 +134,23 @@ export default function CreateArticlePage() {
                     <FormLabel>スラッグ</FormLabel>
                     <FormControl>
                       <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>本文</FormLabel>
+                    <FormControl>
+                      <TipTapEditor
+                        content={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
