@@ -15,6 +15,7 @@ import RestaurantsPage from "./pages/restaurants";
 import AuthPage from "./pages/auth-page";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminArticles from "./pages/admin/articles";
+import CreateArticle from "./pages/admin/articles/create";
 import AdminLoginPage from "./pages/admin/login";
 import BookmarksPage from "./pages/bookmarks";
 import NotFound from "./pages/not-found";
@@ -32,6 +33,7 @@ function Router() {
       <ProtectedRoute path="/bookmarks" component={BookmarksPage} />
       <AdminRoute path="/admin" component={AdminDashboard} />
       <AdminRoute path="/admin/articles" component={AdminArticles} />
+      <AdminRoute path="/admin/articles/create" component={CreateArticle} />
       <Route component={NotFound} />
     </Switch>
   );
