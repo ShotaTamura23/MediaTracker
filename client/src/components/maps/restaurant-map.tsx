@@ -37,10 +37,18 @@ export default function RestaurantMap() {
             elementType: "labels",
             stylers: [{ visibility: "off" }],
           },
+          {
+            featureType: "transit",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
         ],
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
       });
 
-      restaurants.forEach((restaurant) => {
+      restaurants.forEach((restaurant, index) => {
         const position = {
           lat: parseFloat(restaurant.latitude),
           lng: parseFloat(restaurant.longitude),
@@ -50,29 +58,48 @@ export default function RestaurantMap() {
           position,
           map,
           title: restaurant.name,
+          label: {
+            text: `${index + 1}`,
+            color: "#FFFFFF",
+            fontSize: "14px",
+            fontWeight: "bold",
+          },
         });
 
         const infoWindow = new google.maps.InfoWindow({
           content: `
-            <div class="p-4">
-              <h3 class="text-lg font-bold mb-2">${restaurant.name}</h3>
+            <div class="p-4 max-w-[300px]">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="px-2 py-1 bg-primary/10 rounded-full text-xs font-medium">#${index + 1}</span>
+                <h3 class="text-lg font-bold">${restaurant.name}</h3>
+              </div>
               <p class="text-sm mb-2">${restaurant.description}</p>
-              <p class="text-sm text-gray-600 mb-2">${restaurant.address}</p>
-              ${restaurant.website ? 
-                `<a href="${restaurant.website}" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    class="text-sm text-blue-600 hover:underline">
-                  Visit Website
-                </a>` 
-                : ''
-              }
+              <div class="space-y-1 text-sm text-gray-600">
+                <p>${restaurant.address}</p>
+                ${restaurant.phone ? `<p>${restaurant.phone}</p>` : ''}
+                ${restaurant.website ? 
+                  `<a href="${restaurant.website}" 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      class="text-blue-600 hover:underline">
+                    ウェブサイト
+                  </a>` 
+                  : ''
+                }
+              </div>
             </div>
           `,
         });
 
         marker.addListener("click", () => {
+          // Close all other info windows first
+          google.maps.event.trigger(map, 'click');
           infoWindow.open(map, marker);
+        });
+
+        // Close info window when clicking elsewhere on the map
+        map.addListener("click", () => {
+          infoWindow.close();
         });
 
         bounds.extend(position);
@@ -80,6 +107,10 @@ export default function RestaurantMap() {
 
       if (restaurants.length > 0) {
         map.fitBounds(bounds);
+        // Add some padding to the bounds
+        const listener = google.maps.event.addListenerOnce(map, 'idle', () => {
+          map.setZoom(Math.min(map.getZoom()!, 14));
+        });
       }
     }).catch((error) => {
       setError("Failed to load Google Maps");
