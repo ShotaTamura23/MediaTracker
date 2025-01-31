@@ -24,12 +24,13 @@ import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { SelectArticle } from "@db/schema";
+import { ImagePlus, Plus, X } from "lucide-react";
 
 const articleSchema = z.object({
   title: z.string().min(1, "Title is required"),
   slug: z.string().min(1, "Slug is required"),
   excerpt: z.string().min(1, "Excerpt is required"),
-  content: z.string().min(1, "Content is required"),
+  content: z.any(), // Will be JSON stringified
   coverImage: z.string().url("Must be a valid URL"),
   type: z.enum(["review", "list", "essay"]),
   published: z.boolean(),
@@ -40,6 +41,17 @@ interface ArticleEditorProps {
   onClose: () => void;
 }
 
+type ContentBlock = {
+  type: 'paragraph' | 'image' | 'heading';
+  content?: { text: string }[];
+  attrs?: {
+    level?: number;
+    src?: string;
+    alt?: string;
+    caption?: string;
+  };
+};
+
 export default function ArticleEditor({ article, onClose }: ArticleEditorProps) {
   const { toast } = useToast();
 
@@ -49,12 +61,47 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
       title: article?.title || "",
       slug: article?.slug || "",
       excerpt: article?.excerpt || "",
-      content: article?.content as string || "",
+      content: article?.content ? 
+        (typeof article.content === 'string' ? JSON.parse(article.content) : article.content) : 
+        { type: "doc", content: [] },
       coverImage: article?.coverImage || "",
       type: article?.type || "review",
       published: article?.published || false,
     },
   });
+
+  const addContentBlock = (type: ContentBlock['type']) => {
+    const content = form.getValues('content');
+    const newBlock: ContentBlock = type === 'paragraph' 
+      ? { type: 'paragraph', content: [{ text: '' }] }
+      : type === 'image' 
+      ? { type: 'image', attrs: { src: '', alt: '', caption: '' } }
+      : { type: 'heading', attrs: { level: 2 }, content: [{ text: '' }] };
+
+    form.setValue('content', {
+      ...content,
+      content: [...content.content, newBlock],
+    });
+  };
+
+  const removeContentBlock = (index: number) => {
+    const content = form.getValues('content');
+    content.content.splice(index, 1);
+    form.setValue('content', content);
+  };
+
+  const updateBlockContent = (index: number, field: string, value: string) => {
+    const content = form.getValues('content');
+    const block = content.content[index];
+
+    if (block.type === 'paragraph' || block.type === 'heading') {
+      block.content = [{ text: value }];
+    } else if (block.type === 'image') {
+      block.attrs = { ...block.attrs, [field]: value };
+    }
+
+    form.setValue('content', content);
+  };
 
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof articleSchema>) => {
@@ -81,13 +128,12 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
     },
   });
 
-  const onSubmit = (values: z.infer<typeof articleSchema>) => {
-    mutation.mutate(values);
-  };
+  const content = form.watch('content');
+  const articleType = form.watch('type');
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -125,20 +171,6 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
               <FormLabel>Excerpt</FormLabel>
               <FormControl>
                 <Textarea {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="content"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Content</FormLabel>
-              <FormControl>
-                <Textarea className="min-h-[300px]" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -203,6 +235,109 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
               </FormItem>
             )}
           />
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Content Blocks</h3>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addContentBlock('paragraph')}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Text
+              </Button>
+              {articleType !== 'list' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addContentBlock('image')}
+                >
+                  <ImagePlus className="h-4 w-4 mr-2" />
+                  Add Image
+                </Button>
+              )}
+              {articleType === 'list' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addContentBlock('heading')}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Restaurant
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {content.content.map((block: ContentBlock, index: number) => (
+              <div key={index} className="relative border rounded-lg p-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={() => removeContentBlock(index)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+
+                {block.type === 'paragraph' && (
+                  <Textarea
+                    value={block.content?.[0]?.text || ''}
+                    onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
+                    placeholder="Enter text here..."
+                    className="min-h-[100px]"
+                  />
+                )}
+
+                {block.type === 'image' && (
+                  <div className="space-y-4">
+                    <Input
+                      value={block.attrs?.src || ''}
+                      onChange={(e) => updateBlockContent(index, 'src', e.target.value)}
+                      placeholder="Image URL"
+                    />
+                    <Input
+                      value={block.attrs?.alt || ''}
+                      onChange={(e) => updateBlockContent(index, 'alt', e.target.value)}
+                      placeholder="Image alt text"
+                    />
+                    <Input
+                      value={block.attrs?.caption || ''}
+                      onChange={(e) => updateBlockContent(index, 'caption', e.target.value)}
+                      placeholder="Image caption"
+                    />
+                  </div>
+                )}
+
+                {block.type === 'heading' && (
+                  <div className="space-y-4">
+                    <Input
+                      value={block.content?.[0]?.text || ''}
+                      onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
+                      placeholder="Restaurant name"
+                    />
+                    {index < content.content.length - 1 && 
+                     content.content[index + 1].type === 'paragraph' && (
+                      <Textarea
+                        value={content.content[index + 1].content?.[0]?.text || ''}
+                        onChange={(e) => updateBlockContent(index + 1, 'text', e.target.value)}
+                        placeholder="Restaurant description"
+                        className="min-h-[100px]"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="flex justify-end gap-4">

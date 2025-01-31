@@ -206,6 +206,22 @@ export default function ArticlePage() {
                   </p>
                 );
               }
+              if (block.type === 'image') {
+                return (
+                  <figure key={index} className="my-12">
+                    <img
+                      src={block.attrs.src}
+                      alt={block.attrs.alt || ''}
+                      className="w-full rounded-lg"
+                    />
+                    {block.attrs.caption && (
+                      <figcaption className="mt-3 text-sm text-muted-foreground text-center">
+                        {block.attrs.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
+              }
               if (block.type === 'heading' && block.attrs.level === 2) {
                 return (
                   <h2 key={index} className="text-2xl font-bold mt-12 mb-6">
