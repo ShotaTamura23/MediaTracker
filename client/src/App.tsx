@@ -8,6 +8,9 @@ import Navbar from "./components/layout/navbar";
 import Footer from "./components/layout/footer";
 import HomePage from "./pages/home-page";
 import ArticlePage from "./pages/article-page";
+import ReviewsPage from "./pages/articles/reviews";
+import GuidesPage from "./pages/articles/guides";
+import RestaurantsPage from "./pages/restaurants";
 import AuthPage from "./pages/auth-page";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminArticles from "./pages/admin/articles";
@@ -18,6 +21,9 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/article/:slug" component={ArticlePage} />
+      <Route path="/articles/reviews" component={ReviewsPage} />
+      <Route path="/articles/guides" component={GuidesPage} />
+      <Route path="/restaurants" component={RestaurantsPage} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/articles" component={AdminArticles} />
