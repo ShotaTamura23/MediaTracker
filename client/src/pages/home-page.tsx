@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import ArticleCard from "@/components/article/article-card";
 import RestaurantMap from "@/components/maps/restaurant-map";
 import { SelectArticle } from "@db/schema";
+import { Button } from "@/components/ui/button";
+import { SiBookmyshow } from "react-icons/si";
 
 export default function HomePage() {
   const { data: articles, isLoading } = useQuery<SelectArticle[]>({
@@ -11,54 +13,88 @@ export default function HomePage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary" />
+      </div>
+    );
   }
 
   const featuredArticle = articles?.[0];
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       {featuredArticle && (
-        <Link href={`/article/${featuredArticle.slug}`}>
-          <div 
-            className="relative h-[60vh] rounded-lg overflow-hidden mb-12 cursor-pointer group"
+        <div className="relative bg-cover bg-center h-[80vh] min-h-[600px]">
+          <div
+            className="absolute inset-0"
             style={{
               backgroundImage: `url(${featuredArticle.coverImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
-          >
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors" />
-            <div className="absolute bottom-0 left-0 p-8">
-              <div className="text-white">
-                <p className="text-sm uppercase tracking-wider mb-2">Featured Article</p>
-                <h1 className="text-4xl font-bold mb-4">{featuredArticle.title}</h1>
-                <p className="text-lg">{featuredArticle.excerpt}</p>
-              </div>
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <div className="relative h-full container mx-auto px-4">
+            <div className="flex flex-col justify-end h-full pb-16 max-w-2xl">
+              <Link href={`/article/${featuredArticle.slug}`}>
+                <div className="space-y-4 cursor-pointer group">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground">
+                    {featuredArticle.title}
+                  </h1>
+                  <p className="text-xl text-muted-foreground">
+                    {featuredArticle.excerpt}
+                  </p>
+                  <Button 
+                    variant="secondary" 
+                    className="group-hover:translate-x-2 transition-transform"
+                  >
+                    続きを読む
+                    <span className="ml-2">→</span>
+                  </Button>
+                </div>
+              </Link>
             </div>
           </div>
-        </Link>
+        </div>
       )}
 
       {/* Main Content */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        <div>
-          <h2 className="text-2xl font-semibold mb-6">Latest Articles</h2>
-          <div className="space-y-6">
-            {articles?.slice(1).map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </div>
-        
-        <div className="lg:sticky lg:top-4 h-fit">
-          <Card className="p-4">
-            <h2 className="text-2xl font-semibold mb-4">Featured Restaurants</h2>
-            <div className="h-[600px]">
-              <RestaurantMap />
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid lg:grid-cols-[1fr,400px] gap-12">
+          {/* Articles Section */}
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">最新の記事</h2>
+              <Link href="/articles">
+                <Button variant="ghost">
+                  すべての記事を見る
+                  <span className="ml-2">→</span>
+                </Button>
+              </Link>
             </div>
-          </Card>
+            <div className="grid gap-8">
+              {articles?.slice(1).map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
+          </div>
+
+          {/* Map Section */}
+          <div className="lg:sticky lg:top-4 space-y-8">
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <SiBookmyshow className="h-6 w-6 text-primary" />
+                  <h2 className="text-2xl font-bold">ロンドンの日本食</h2>
+                </div>
+                <div className="h-[600px] rounded-lg overflow-hidden">
+                  <RestaurantMap />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
