@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { Redirect, Route } from "wouter";
+import { Route } from "wouter";
+import { useLocation } from "wouter";
 
 export function AdminRoute({
   path,
@@ -10,6 +11,7 @@ export function AdminRoute({
   component: () => React.JSX.Element;
 }) {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -21,12 +23,9 @@ export function AdminRoute({
     );
   }
 
-  if (!user || !user.isAdmin) {
-    return (
-      <Route path={path}>
-        <Redirect to="/" />
-      </Route>
-    );
+  if (!user?.isAdmin) {
+    setLocation("/");
+    return null;
   }
 
   return <Route path={path} component={Component} />;
