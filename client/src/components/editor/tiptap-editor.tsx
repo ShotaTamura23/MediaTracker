@@ -23,15 +23,39 @@ interface TipTapEditorProps {
 export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Image,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
       Link.configure({
         openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-primary underline',
+        },
       }),
     ],
     content,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose dark:prose-invert focus:outline-none',
+      },
+    },
     onUpdate: ({ editor }) => {
-      onChange(editor.getJSON());
+      const json = editor.getJSON();
+      onChange(json);
     },
   });
 
@@ -58,10 +82,19 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
   };
 
   const setLink = () => {
-    const url = window.prompt('URLを入力してください:');
-    if (url) {
-      editor.chain().focus().setLink({ href: url }).run();
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URLを入力してください:', previousUrl);
+
+    if (url === null) {
+      return;
     }
+
+    if (url === '') {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+
+    editor.chain().focus().setLink({ href: url }).run();
   };
 
   return (
@@ -72,6 +105,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
+          data-active={editor.isActive('bold')}
           className={editor.isActive('bold') ? 'bg-accent' : ''}
         >
           <Bold className="h-4 w-4" />
@@ -81,6 +115,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
+          data-active={editor.isActive('italic')}
           className={editor.isActive('italic') ? 'bg-accent' : ''}
         >
           <Italic className="h-4 w-4" />
@@ -90,6 +125,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
+          data-active={editor.isActive('bulletList')}
           className={editor.isActive('bulletList') ? 'bg-accent' : ''}
         >
           <List className="h-4 w-4" />
@@ -99,6 +135,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          data-active={editor.isActive('orderedList')}
           className={editor.isActive('orderedList') ? 'bg-accent' : ''}
         >
           <ListOrdered className="h-4 w-4" />
@@ -108,6 +145,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          data-active={editor.isActive('blockquote')}
           className={editor.isActive('blockquote') ? 'bg-accent' : ''}
         >
           <Quote className="h-4 w-4" />
@@ -117,6 +155,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
         >
           <Undo className="h-4 w-4" />
         </Button>
@@ -125,6 +164,7 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           size="icon"
           type="button"
           onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
         >
           <Redo className="h-4 w-4" />
         </Button>
@@ -146,7 +186,10 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
           <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
-      <EditorContent editor={editor} className="prose max-w-none p-4" />
+      <EditorContent 
+        editor={editor} 
+        className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none min-h-[200px] p-4" 
+      />
     </div>
   );
 }
