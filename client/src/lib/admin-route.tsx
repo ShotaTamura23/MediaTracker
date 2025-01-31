@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { Route } from "wouter";
-import { useLocation } from "wouter";
+import { Route, useLocation } from "wouter";
+import { useEffect } from "react";
 
 export function AdminRoute({
   path,
@@ -12,6 +12,20 @@ export function AdminRoute({
 }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    console.log('AdminRoute状態:', {
+      isLoading,
+      user,
+      isAdmin: user?.isAdmin,
+      path
+    });
+
+    if (!isLoading && (!user || !user.isAdmin)) {
+      console.log('管理者権限がないため、リダイレクトします');
+      setLocation("/");
+    }
+  }, [user, isLoading, setLocation, path]);
 
   if (isLoading) {
     return (
@@ -24,9 +38,10 @@ export function AdminRoute({
   }
 
   if (!user?.isAdmin) {
-    setLocation("/");
+    console.log('管理者権限がありません');
     return null;
   }
 
+  console.log('管理者としてレンダリングします');
   return <Route path={path} component={Component} />;
 }
