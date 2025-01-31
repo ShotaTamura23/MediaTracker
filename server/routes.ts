@@ -26,6 +26,7 @@ export function registerRoutes(app: Express): Server {
     res.json(article);
   });
 
+  // Admin-only routes for article management
   app.post("/api/articles", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
     const article = await db.insert(articles).values({
@@ -33,6 +34,25 @@ export function registerRoutes(app: Express): Server {
       authorId: req.user.id,
     }).returning();
     res.status(201).json(article[0]);
+  });
+
+  app.patch("/api/articles/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    const [article] = await db.update(articles)
+      .set(req.body)
+      .where(eq(articles.id, parseInt(req.params.id)))
+      .returning();
+    if (!article) return res.sendStatus(404);
+    res.json(article);
+  });
+
+  app.delete("/api/articles/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    const [article] = await db.delete(articles)
+      .where(eq(articles.id, parseInt(req.params.id)))
+      .returning();
+    if (!article) return res.sendStatus(404);
+    res.sendStatus(200);
   });
 
   // Restaurants

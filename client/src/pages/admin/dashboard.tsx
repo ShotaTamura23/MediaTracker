@@ -12,11 +12,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import {
-  Users,
   BookOpen,
+  TrendingUp,
   Bookmark,
   Mail,
-  TrendingUp,
 } from "lucide-react";
 import { SelectArticle, SelectNewsletter } from "@db/schema";
 
@@ -53,25 +52,25 @@ export default function AdminDashboard() {
 
   const stats = [
     {
-      title: "Total Articles",
+      title: "総記事数",
       value: totalArticles,
       icon: BookOpen,
       className: "bg-blue-500",
     },
     {
-      title: "Published",
+      title: "公開済み",
       value: publishedArticles,
       icon: TrendingUp,
       className: "bg-green-500",
     },
     {
-      title: "Draft",
+      title: "下書き",
       value: totalArticles - publishedArticles,
       icon: Bookmark,
       className: "bg-orange-500",
     },
     {
-      title: "Subscribers",
+      title: "購読者数",
       value: subscriberCount,
       icon: Mail,
       className: "bg-purple-500",
@@ -80,7 +79,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8">管理画面</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
@@ -103,7 +102,7 @@ export default function AdminDashboard() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Content Distribution</CardTitle>
+            <CardTitle>記事タイプの分布</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -122,7 +121,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Articles</CardTitle>
+            <CardTitle>最近の記事</CardTitle>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[300px]">
@@ -145,7 +144,7 @@ export default function AdminDashboard() {
                           : "bg-orange-100 text-orange-800"
                       }`}
                     >
-                      {article.published ? "Published" : "Draft"}
+                      {article.published ? "公開中" : "下書き"}
                     </span>
                   </div>
                 ))}
