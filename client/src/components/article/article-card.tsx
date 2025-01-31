@@ -3,10 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { SelectArticle } from "@db/schema";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ArticleCardProps {
   article: SelectArticle;
@@ -15,6 +16,8 @@ interface ArticleCardProps {
 
 export default function ArticleCard({ article, isBookmarked }: ArticleCardProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const bookmarkMutation = useMutation({
     mutationFn: async () => {
@@ -23,6 +26,20 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
       } else {
         await apiRequest("POST", "/api/bookmarks", { articleId: article.id });
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
+      toast({
+        title: isBookmarked ? "ブックマークを解除しました" : "ブックマークに追加しました",
+        description: isBookmarked ? "記事のブックマークを解除しました" : "記事をブックマークに保存しました",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "エラー",
+        description: "ブックマークの操作に失敗しました。",
+        variant: "destructive",
+      });
     },
   });
 
@@ -39,7 +56,8 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
             variant="ghost"
             size="icon"
             className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-            onClick={() => bookmarkMutation.mutate()}
+            onClick={() => !bookmarkMutation.isPending && bookmarkMutation.mutate()}
+            disabled={bookmarkMutation.isPending}
           >
             <Bookmark
               className={cn(
