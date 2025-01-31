@@ -55,10 +55,7 @@ export default function AuthPage() {
   });
 
   if (user) {
-    // Use setTimeout to avoid the React state update during render
-    setTimeout(() => {
-      setLocation("/");
-    }, 0);
+    setLocation("/");
     return null;
   }
 
@@ -66,27 +63,26 @@ export default function AuthPage() {
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-muted/50">
       <div className="container max-w-screen-xl grid lg:grid-cols-2 gap-8 py-8">
         <div className="hidden lg:flex flex-col justify-center">
-          <h1 className="text-4xl font-bold mb-4">Welcome to 日本食</h1>
+          <h1 className="text-4xl font-bold mb-4">日本食へようこそ</h1>
           <p className="text-xl text-muted-foreground">
-            Join our community to discover the best of Japanese cuisine and culture
-            in the UK. Get personalized recommendations, save your favorite
-            articles, and stay updated with our newsletter.
+            コミュニティに参加して、イギリスの日本食文化をもっと知ろう。
+            お気に入りの記事をブックマークしたり、最新情報をニュースレターで受け取ることができます。
           </p>
         </div>
 
         <div>
           <Card className="w-full max-w-md mx-auto">
             <CardHeader>
-              <CardTitle>Sign In</CardTitle>
+              <CardTitle>アカウント</CardTitle>
               <CardDescription>
-                Access your account or create a new one
+                ログインまたは新規登録してください
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="login">
                 <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="register">Register</TabsTrigger>
+                  <TabsTrigger value="login">ログイン</TabsTrigger>
+                  <TabsTrigger value="register">新規登録</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -102,7 +98,7 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>ユーザー名</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -115,7 +111,7 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>パスワード</FormLabel>
                             <FormControl>
                               <Input type="password" {...field} />
                             </FormControl>
@@ -128,7 +124,7 @@ export default function AuthPage() {
                         className="w-full"
                         disabled={loginMutation.isPending}
                       >
-                        Sign In
+                        ログイン
                       </Button>
                     </form>
                   </Form>
@@ -147,7 +143,7 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>ユーザー名</FormLabel>
                             <FormControl>
                               <Input {...field} />
                             </FormControl>
@@ -160,7 +156,7 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>メールアドレス</FormLabel>
                             <FormControl>
                               <Input type="email" {...field} />
                             </FormControl>
@@ -173,7 +169,7 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>パスワード</FormLabel>
                             <FormControl>
                               <Input type="password" {...field} />
                             </FormControl>
@@ -186,7 +182,7 @@ export default function AuthPage() {
                         className="w-full"
                         disabled={registerMutation.isPending}
                       >
-                        Create Account
+                        アカウントを作成
                       </Button>
                     </form>
                   </Form>

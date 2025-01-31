@@ -5,7 +5,7 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import type { SelectUser, InsertUser } from "@db/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -27,55 +27,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | null, Error>({
+  } = useQuery<SelectUser | null>({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  const loginMutation = useMutation<SelectUser, Error, LoginData>({
+  const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       const res = await apiRequest("POST", "/api/login", credentials);
       return res.json();
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "ログイン成功",
+        description: "アカウントにログインしました。",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: "ログインに失敗しました",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const registerMutation = useMutation<SelectUser, Error, InsertUser>({
+  const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
       const res = await apiRequest("POST", "/api/register", credentials);
       return res.json();
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "アカウント作成成功",
+        description: "新しいアカウントを作成しました。",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: "アカウント作成に失敗しました",
         description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  const logoutMutation = useMutation<void, Error, void>({
+  const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      toast({
+        title: "ログアウト",
+        description: "アカウントからログアウトしました。",
+      });
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout failed",
+        title: "ログアウトに失敗しました",
         description: error.message,
         variant: "destructive",
       });
