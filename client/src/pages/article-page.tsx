@@ -3,7 +3,7 @@ import { useRoute, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, Share2, MapPin, Phone, Globe } from "lucide-react";
+import { Bookmark, Share2, MapPin, Phone, Globe, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { SelectArticle } from "@db/schema";
@@ -18,13 +18,28 @@ export default function ArticlePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: article } = useQuery<SelectArticle>({
+  const { data: article, isLoading } = useQuery<SelectArticle>({
     queryKey: [`/api/articles/${params?.slug}`],
   });
 
-  // If article is not found or not published (and user is not admin), redirect to home
-  if (!article || (!article.published && !user?.isAdmin)) {
-    setLocation("/");
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // If article is not found, redirect to 404
+  if (!article) {
+    setLocation("/not-found");
+    return null;
+  }
+
+  // If article is not published and user is not admin, redirect to 404
+  if (!article.published && !user?.isAdmin) {
+    setLocation("/not-found");
     return null;
   }
 
