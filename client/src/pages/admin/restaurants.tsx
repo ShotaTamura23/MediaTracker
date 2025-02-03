@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusCircle, Pencil, MapPin, MoreHorizontal } from "lucide-react";
 import { insertRestaurantSchema, type SelectRestaurant } from "@db/schema";
+import AdminLayout from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -227,159 +228,107 @@ export default function AdminRestaurants() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">レストラン管理</h1>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setDialogOpen(true)}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              新規登録
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingRestaurant ? "レストラン情報編集" : "レストラン登録"}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>店名</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
+    <AdminLayout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">レストラン管理</h1>
+          <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setDialogOpen(true)}>
+                <PlusCircle className="h-4 w-4 mr-2" />
+                新規登録
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingRestaurant ? "レストラン情報編集" : "レストラン登録"}
+                </DialogTitle>
+              </DialogHeader>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleSubmit)}
+                  className="space-y-6"
+                >
                   <FormField
                     control={form.control}
-                    name="cuisine_type"
+                    name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>料理の種類</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="料理の種類を選択" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="washoku">和食</SelectItem>
-                            <SelectItem value="sushi">寿司</SelectItem>
-                            <SelectItem value="ramen">ラーメン</SelectItem>
-                            <SelectItem value="izakaya">居酒屋</SelectItem>
-                            <SelectItem value="other">その他</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="price_range"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>価格帯</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="価格帯を選択" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="budget">予算friendly (£)</SelectItem>
-                            <SelectItem value="moderate">普通 (££)</SelectItem>
-                            <SelectItem value="expensive">高級 (£££)</SelectItem>
-                            <SelectItem value="luxury">超高級 (££££)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>店舗説明</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>住所</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-2">
+                        <FormLabel>店名</FormLabel>
+                        <FormControl>
                           <Input {...field} />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => {
-                              // TODO: Implement address search
-                            }}
-                          >
-                            <MapPin className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <FormLabel>位置情報</FormLabel>
-                  <div className="h-[300px] rounded-lg border">
-                    <RestaurantLocationPicker
-                      onLocationSelect={handleLocationSelect}
-                      defaultLocation={
-                        selectedLocation || { lat: 51.5074, lng: -0.1278 }
-                      }
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="cuisine_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>料理の種類</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="料理の種類を選択" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="washoku">和食</SelectItem>
+                              <SelectItem value="sushi">寿司</SelectItem>
+                              <SelectItem value="ramen">ラーメン</SelectItem>
+                              <SelectItem value="izakaya">居酒屋</SelectItem>
+                              <SelectItem value="other">その他</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="price_range"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>価格帯</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="価格帯を選択" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="budget">予算friendly (£)</SelectItem>
+                              <SelectItem value="moderate">普通 (££)</SelectItem>
+                              <SelectItem value="expensive">高級 (£££)</SelectItem>
+                              <SelectItem value="luxury">超高級 (££££)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="phone"
+                    name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>電話番号</FormLabel>
+                        <FormLabel>店舗説明</FormLabel>
                         <FormControl>
-                          <Input {...field} type="tel" />
+                          <Textarea {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -388,114 +337,168 @@ export default function AdminRestaurants() {
 
                   <FormField
                     control={form.control}
-                    name="website"
+                    name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ウェブサイト</FormLabel>
+                        <FormLabel>住所</FormLabel>
                         <FormControl>
-                          <Input {...field} type="url" />
+                          <div className="flex gap-2">
+                            <Input {...field} />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                // TODO: Implement address search
+                              }}
+                            >
+                              <MapPin className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                </div>
 
-                <div className="flex justify-end gap-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => handleDialogClose(false)}
-                  >
-                    キャンセル
-                  </Button>
-                  <Button type="submit">
-                    {editingRestaurant ? "更新" : "登録"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-      </div>
+                  <div className="space-y-2">
+                    <FormLabel>位置情報</FormLabel>
+                    <div className="h-[300px] rounded-lg border">
+                      <RestaurantLocationPicker
+                        onLocationSelect={handleLocationSelect}
+                        defaultLocation={
+                          selectedLocation || { lat: 51.5074, lng: -0.1278 }
+                        }
+                      />
+                    </div>
+                  </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>店名</TableHead>
-              <TableHead>料理の種類</TableHead>
-              <TableHead>価格帯</TableHead>
-              <TableHead>ステータス</TableHead>
-              <TableHead>住所</TableHead>
-              <TableHead>操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {restaurants?.map((restaurant) => (
-              <TableRow key={restaurant.id}>
-                <TableCell className="font-medium">{restaurant.name}</TableCell>
-                <TableCell>{restaurant.cuisine_type}</TableCell>
-                <TableCell>{restaurant.price_range}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={statusColors[restaurant.status as keyof typeof statusColors]}
-                  >
-                    {statusLabels[restaurant.status as keyof typeof statusLabels]}
-                  </Badge>
-                </TableCell>
-                <TableCell>{restaurant.address}</TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => handleEditRestaurant(restaurant)}
-                      >
-                        編集する
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleStatusChange(restaurant.id, "published")
-                        }
-                      >
-                        公開する
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleStatusChange(restaurant.id, "unpublished")
-                        }
-                      >
-                        非公開にする
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChange(restaurant.id, "draft")}
-                      >
-                        下書きに戻す
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() =>
-                          handleStatusChange(restaurant.id, "deleted")
-                        }
-                      >
-                        削除する
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>電話番号</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="tel" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="website"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ウェブサイト</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="url" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handleDialogClose(false)}
+                    >
+                      キャンセル
+                    </Button>
+                    <Button type="submit">
+                      {editingRestaurant ? "更新" : "登録"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>店名</TableHead>
+                <TableHead>料理の種類</TableHead>
+                <TableHead>価格帯</TableHead>
+                <TableHead>ステータス</TableHead>
+                <TableHead>住所</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {restaurants?.map((restaurant) => (
+                <TableRow key={restaurant.id}>
+                  <TableCell className="font-medium">{restaurant.name}</TableCell>
+                  <TableCell>{restaurant.cuisine_type}</TableCell>
+                  <TableCell>{restaurant.price_range}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={statusColors[restaurant.status as keyof typeof statusColors]}
+                    >
+                      {statusLabels[restaurant.status as keyof typeof statusLabels]}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{restaurant.address}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleEditRestaurant(restaurant)}
+                        >
+                          編集する
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusChange(restaurant.id, "published")
+                          }
+                        >
+                          公開する
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusChange(restaurant.id, "unpublished")
+                          }
+                        >
+                          非公開にする
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleStatusChange(restaurant.id, "draft")}
+                        >
+                          下書きに戻す
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() =>
+                            handleStatusChange(restaurant.id, "deleted")
+                          }
+                        >
+                          削除する
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

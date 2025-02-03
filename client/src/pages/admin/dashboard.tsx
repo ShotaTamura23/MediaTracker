@@ -54,7 +54,7 @@ export default function AdminDashboard() {
       acc.push({ type: article.type, count: 1 });
     }
     return acc;
-  }, []);
+  }, []) || [];
 
   const stats = [
     {
