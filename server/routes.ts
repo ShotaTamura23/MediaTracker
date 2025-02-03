@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { db } from "@db";
-import { articles, bookmarks, newsletters, restaurants } from "@db/schema";
+import { articles, bookmarks, newsletters, restaurants, article_restaurants } from "@db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export function registerRoutes(app: Express): Server {
@@ -11,51 +11,133 @@ export function registerRoutes(app: Express): Server {
   // Articles
   app.get("/api/articles", async (req, res) => {
     const allArticles = await db.query.articles.findMany({
-      with: { author: true },
+      with: {
+        author: true,
+        restaurants: {
+          with: {
+            restaurant: true,
+          },
+        },
+      },
       orderBy: desc(articles.createdAt),
     });
-    res.json(allArticles);
+
+    // Transform the response to include restaurants directly
+    const transformedArticles = allArticles.map(article => ({
+      ...article,
+      restaurants: article.restaurants
+        .sort((a, b) => a.order - b.order)
+        .map(ar => ({
+          ...ar.restaurant,
+          description: ar.description,
+          order: ar.order,
+        })),
+    }));
+
+    res.json(transformedArticles);
   });
 
   app.get("/api/articles/:slug", async (req, res) => {
     const [article] = await db.query.articles.findMany({
       where: eq(articles.slug, req.params.slug),
-      with: { author: true },
+      with: {
+        author: true,
+        restaurants: {
+          with: {
+            restaurant: true,
+          },
+        },
+      },
     });
+
     if (!article) return res.sendStatus(404);
-    res.json(article);
+
+    // Transform the response
+    const transformedArticle = {
+      ...article,
+      restaurants: article.restaurants
+        .sort((a, b) => a.order - b.order)
+        .map(ar => ({
+          ...ar.restaurant,
+          description: ar.description,
+          order: ar.order,
+        })),
+    };
+
+    res.json(transformedArticle);
   });
 
   // Admin-only routes for article management
   app.post("/api/articles", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
 
-    const { restaurants, ...articleData } = req.body;
-    const article = await db.insert(articles).values({
-      ...articleData,
-      authorId: req.user.id,
-    }).returning();
+    const { restaurants: articleRestaurants, ...articleData } = req.body;
 
-    // TODO: Add restaurants relation handling here
-    // This will be implemented when the database schema is updated to support article-restaurant relations
+    // Begin transaction
+    const article = await db.transaction(async (tx) => {
+      // Insert article
+      const [newArticle] = await tx.insert(articles)
+        .values({
+          ...articleData,
+          authorId: req.user.id,
+        })
+        .returning();
 
-    res.status(201).json(article[0]);
+      // Insert restaurant relations if any
+      if (articleRestaurants && articleRestaurants.length > 0) {
+        await tx.insert(article_restaurants)
+          .values(
+            articleRestaurants.map((r: any) => ({
+              articleId: newArticle.id,
+              restaurantId: r.id,
+              order: r.order,
+              description: r.description,
+            }))
+          );
+      }
+
+      return newArticle;
+    });
+
+    res.status(201).json(article);
   });
 
   app.patch("/api/articles/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
 
-    const { restaurants, ...articleData } = req.body;
-    const [article] = await db.update(articles)
-      .set(articleData)
-      .where(eq(articles.id, parseInt(req.params.id)))
-      .returning();
+    const { restaurants: articleRestaurants, ...articleData } = req.body;
+    const articleId = parseInt(req.params.id);
+
+    const article = await db.transaction(async (tx) => {
+      // Update article
+      const [updatedArticle] = await tx.update(articles)
+        .set(articleData)
+        .where(eq(articles.id, articleId))
+        .returning();
+
+      if (!updatedArticle) return null;
+
+      // Delete existing restaurant relations
+      await tx.delete(article_restaurants)
+        .where(eq(article_restaurants.articleId, articleId));
+
+      // Insert new restaurant relations if any
+      if (articleRestaurants && articleRestaurants.length > 0) {
+        await tx.insert(article_restaurants)
+          .values(
+            articleRestaurants.map((r: any) => ({
+              articleId: updatedArticle.id,
+              restaurantId: r.id,
+              order: r.order,
+              description: r.description,
+            }))
+          );
+      }
+
+      return updatedArticle;
+    });
 
     if (!article) return res.sendStatus(404);
-
-    // TODO: Update restaurants relation here
-    // This will be implemented when the database schema is updated to support article-restaurant relations
-
     res.json(article);
   });
 
