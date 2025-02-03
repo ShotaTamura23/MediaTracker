@@ -8,9 +8,17 @@ import { apiRequest } from "@/lib/queryClient";
 import { SelectArticle } from "@db/schema";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface ArticleCardProps {
-  article: SelectArticle;
+  article: SelectArticle & {
+    restaurants?: Array<{
+      name: string;
+      cuisine_type: string;
+      price_range: string;
+      description?: string;
+    }>;
+  };
   isBookmarked?: boolean;
 }
 
@@ -43,6 +51,14 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
     },
   });
 
+  const getRestaurantText = () => {
+    if (!article.restaurants?.length) return null;
+    if (article.type === "review") {
+      return article.restaurants[0].name;
+    }
+    return `${article.restaurants.length}件のレストラン`;
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <div className="relative aspect-[16/9]">
@@ -74,12 +90,21 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
             {article.title}
           </h3>
         </Link>
-        <p className="text-muted-foreground line-clamp-2">{article.excerpt}</p>
+        <p className="text-muted-foreground line-clamp-2 mb-3">{article.excerpt}</p>
         <div className="flex items-center justify-between mt-4">
-          <span className="text-sm text-muted-foreground">
-            {new Date(article.createdAt).toLocaleDateString()}
-          </span>
-          <span className="text-sm font-medium capitalize">{article.type}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {new Date(article.createdAt).toLocaleDateString()}
+            </span>
+            {getRestaurantText() && (
+              <Badge variant="secondary" className="text-xs">
+                {getRestaurantText()}
+              </Badge>
+            )}
+          </div>
+          <Badge className="capitalize">
+            {article.type === "review" ? "レビュー" : article.type === "list" ? "リスト" : "エッセイ"}
+          </Badge>
         </div>
       </CardContent>
     </Card>
