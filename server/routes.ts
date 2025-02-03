@@ -53,7 +53,6 @@ export function registerRoutes(app: Express): Server {
 
     if (!article) return res.sendStatus(404);
 
-    // Transform the response
     const transformedArticle = {
       ...article,
       content: typeof article.content === 'string'

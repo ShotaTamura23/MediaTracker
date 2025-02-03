@@ -139,7 +139,7 @@ export default function EditArticlePage() {
       // Always use the latest editor content
       const articleData = {
         ...values,
-        content: JSON.stringify(editorContent),
+        content: editorContent,
         restaurants: selectedRestaurants,
       };
 
@@ -155,7 +155,6 @@ export default function EditArticlePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
       queryClient.invalidateQueries({ queryKey: [`/api/articles/id/${params?.id}`] });
 
-      // Show success toast
       toast({
         title: "記事を更新しました",
         description: "記事が正常に更新されました。",
