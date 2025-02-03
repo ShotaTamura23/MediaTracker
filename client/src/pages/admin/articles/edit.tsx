@@ -102,11 +102,16 @@ export default function EditArticlePage() {
     if (article) {
       console.log('Loading article data:', article);
 
+      // Parse content if it's a string
+      const parsedContent = typeof article.content === 'string' 
+        ? JSON.parse(article.content) 
+        : article.content;
+
       // Reset form with all values
       form.reset({
         title: article.title,
         slug: article.slug,
-        content: article.content,
+        content: parsedContent,
         excerpt: article.excerpt,
         coverImage: article.coverImage,
         type: article.type,
@@ -127,6 +132,10 @@ export default function EditArticlePage() {
 
       const articleData = {
         ...values,
+        // Ensure content is properly stringified if needed
+        content: typeof values.content === 'string' 
+          ? values.content 
+          : JSON.stringify(values.content),
         restaurants: selectedRestaurants,
       };
 
@@ -140,6 +149,7 @@ export default function EditArticlePage() {
     onSuccess: () => {
       // First invalidate the queries
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/articles/id/${params?.id}`] });
 
       // Show success toast
       toast({
