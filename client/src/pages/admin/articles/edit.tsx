@@ -98,7 +98,7 @@ export default function EditArticlePage() {
     }
   });
 
-  // Initialize editor content when article data is loaded
+  // Initialize form and editor when article data is loaded
   useEffect(() => {
     if (article) {
       console.log('Loading article data:', article);
@@ -120,7 +120,7 @@ export default function EditArticlePage() {
       form.reset({
         title: article.title,
         slug: article.slug,
-        content: contentToSet,
+        content: contentToSet, // Set initial content
         excerpt: article.excerpt,
         coverImage: article.coverImage,
         type: article.type,
@@ -141,11 +141,11 @@ export default function EditArticlePage() {
       // Ensure we're sending the latest editor content
       const formData = {
         ...values,
-        content: editorContent,
+        content: editorContent, // Use the current editor content
         restaurants: selectedRestaurants,
       };
 
-      console.log('Sending article update:', formData);
+      console.log('Submitting article update:', formData);
       console.log('Editor content structure:', editorContent);
 
       const res = await apiRequest("PATCH", `/api/articles/${params.id}`, formData);
@@ -178,10 +178,15 @@ export default function EditArticlePage() {
     },
   });
 
-  // Editor content update handler
+  // Editor content update handler with proper form synchronization
   const handleEditorUpdate = (newContent: any) => {
     console.log('Editor content updated:', newContent);
     setEditorContent(newContent);
+    form.setValue('content', newContent, { 
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true
+    });
   };
 
 
@@ -248,15 +253,26 @@ export default function EditArticlePage() {
 
   // Form submission handler
   const onSubmit = async (values: FormValues) => {
-    console.log('Submitting form with values:', values);
+    console.log('Form values before submit:', values);
+    console.log('Current editor content:', editorContent);
+
+    if (!editorContent) {
+      toast({
+        title: "エラー",
+        description: "本文が入力されていません",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = {
       ...values,
-      content: editorContent, // Use the latest editor content
+      content: editorContent,
     };
-    console.log('Sending formData:', formData);
+
+    console.log('Final form data to submit:', formData);
     mutation.mutate(formData);
   };
-
 
   const articleType = form.watch('type');
 
