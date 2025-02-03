@@ -43,7 +43,9 @@ import AdminLayout from "@/components/layout/admin-layout";
 
 const editArticleSchema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
-  slug: z.string().min(1, "スラッグは必須です"),
+  slug: z.string().min(1, "スラッグは必須です").regex(/^[a-z0-9-]+$/, {
+    message: "スラッグは半角英数字とハイフンのみ使用できます",
+  }),
   content: z.any(),
   excerpt: z.string().min(1, "抜粋は必須です"),
   coverImage: z.string().min(1, "カバー画像は必須です"),
@@ -130,8 +132,8 @@ export default function EditArticlePage() {
 
       const res = await apiRequest("PATCH", `/api/articles/${params.id}`, articleData);
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to update article");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update article");
       }
       return res.json();
     },
