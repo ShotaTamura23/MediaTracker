@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Form,
   FormControl,
@@ -23,23 +24,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { SelectArticle } from "@db/schema";
+import { SelectArticle, SelectRestaurant } from "@db/schema";
 import { ImagePlus, Plus, X } from "lucide-react";
-
-const articleSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  slug: z.string().min(1, "Slug is required"),
-  excerpt: z.string().min(1, "Excerpt is required"),
-  content: z.any(), // Will be JSON stringified
-  coverImage: z.string().url("Must be a valid URL"),
-  type: z.enum(["review", "list", "essay"]),
-  published: z.boolean(),
-});
-
-interface ArticleEditorProps {
-  article?: SelectArticle | null;
-  onClose: () => void;
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type ContentBlock = {
   type: 'paragraph' | 'image' | 'heading';
@@ -52,6 +53,11 @@ type ContentBlock = {
   };
 };
 
+interface ArticleEditorProps {
+  article?: SelectArticle | null;
+  onClose: () => void;
+}
+
 const defaultContent = {
   type: "doc",
   content: [
@@ -62,11 +68,32 @@ const defaultContent = {
   ]
 };
 
+type SelectedRestaurant = SelectRestaurant & {
+  description?: string;
+  order: number;
+};
+
 export default function ArticleEditor({ article, onClose }: ArticleEditorProps) {
   const { toast } = useToast();
+  const [selectedRestaurants, setSelectedRestaurants] = useState<SelectedRestaurant[]>(
+    article?.restaurants || []
+  );
+  const [restaurantDialogOpen, setRestaurantDialogOpen] = useState(false);
+
+  const { data: restaurants } = useQuery<SelectRestaurant[]>({
+    queryKey: ["/api/restaurants"],
+  });
 
   const form = useForm({
-    resolver: zodResolver(articleSchema),
+    resolver: zodResolver(z.object({
+      title: z.string().min(1, "Title is required"),
+      slug: z.string().min(1, "Slug is required"),
+      excerpt: z.string().min(1, "Excerpt is required"),
+      content: z.any(),
+      coverImage: z.string().url("Must be a valid URL"),
+      type: z.enum(["review", "list", "essay"]),
+      published: z.boolean(),
+    })),
     defaultValues: {
       title: article?.title || "",
       slug: article?.slug || "",
@@ -80,54 +107,54 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
     },
   });
 
-  const addContentBlock = (type: ContentBlock['type']) => {
-    const content = form.getValues('content') || defaultContent;
-    const newBlock: ContentBlock = type === 'paragraph' 
-      ? { type: 'paragraph', content: [{ text: '' }] }
-      : type === 'image' 
-      ? { type: 'image', attrs: { src: '', alt: '', caption: '' } }
-      : { type: 'heading', attrs: { level: 2 }, content: [{ text: '' }] };
-
-    form.setValue('content', {
-      ...content,
-      content: [...(content.content || []), newBlock],
-    });
-  };
-
-  const removeContentBlock = (index: number) => {
-    const content = form.getValues('content') || defaultContent;
-    const newContent = [...content.content];
-    newContent.splice(index, 1);
-    form.setValue('content', { ...content, content: newContent });
-  };
-
-  const updateBlockContent = (index: number, field: string, value: string) => {
-    const content = form.getValues('content') || defaultContent;
-    const newContent = [...content.content];
-    const block = newContent[index];
-
-    if (block.type === 'paragraph' || block.type === 'heading') {
-      block.content = [{ text: value }];
-    } else if (block.type === 'image') {
-      block.attrs = { ...block.attrs, [field]: value };
+  const handleAddRestaurant = (restaurant: SelectRestaurant) => {
+    const articleType = form.watch("type");
+    if (articleType === "review" && selectedRestaurants.length > 0) {
+      // レビュー記事の場合は1つのレストランのみ
+      setSelectedRestaurants([{ ...restaurant, order: 0, description: "" }]);
+    } else {
+      // リスト記事の場合は複数のレストランを追加可能
+      setSelectedRestaurants([
+        ...selectedRestaurants,
+        { ...restaurant, order: selectedRestaurants.length, description: "" },
+      ]);
     }
+  };
 
-    form.setValue('content', { ...content, content: newContent });
+  const handleRemoveRestaurant = (restaurantId: number) => {
+    setSelectedRestaurants(
+      selectedRestaurants
+        .filter((r) => r.id !== restaurantId)
+        .map((r, index) => ({ ...r, order: index }))
+    );
+  };
+
+  const handleRestaurantDescriptionChange = (restaurantId: number, description: string) => {
+    setSelectedRestaurants(
+      selectedRestaurants.map((r) =>
+        r.id === restaurantId ? { ...r, description } : r
+      )
+    );
   };
 
   const mutation = useMutation({
-    mutationFn: async (values: z.infer<typeof articleSchema>) => {
+    mutationFn: async (values: any) => {
+      const articleData = {
+        ...values,
+        restaurants: selectedRestaurants,
+      };
+
       if (article) {
-        await apiRequest("PATCH", `/api/articles/${article.id}`, values);
+        await apiRequest("PATCH", `/api/articles/${article.id}`, articleData);
       } else {
-        await apiRequest("POST", "/api/articles", values);
+        await apiRequest("POST", "/api/articles", articleData);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
       toast({
         title: "Success",
-        description: `Article ${article ? "updated" : "created"} successfully.`,
+        description: `記事を${article ? "更新" : "作成"}しました。`,
       });
       onClose();
     },
@@ -146,13 +173,14 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
+        {/* 基本情報フォーム */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Title</FormLabel>
+                <FormLabel>タイトル</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -165,7 +193,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
             name="slug"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Slug</FormLabel>
+                <FormLabel>スラッグ</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -180,7 +208,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
           name="excerpt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Excerpt</FormLabel>
+              <FormLabel>抜粋</FormLabel>
               <FormControl>
                 <Textarea {...field} />
               </FormControl>
@@ -194,7 +222,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
           name="coverImage"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cover Image URL</FormLabel>
+              <FormLabel>カバー画像 URL</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -209,20 +237,23 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
             name="type"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Article Type</FormLabel>
+                <FormLabel>記事タイプ</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setSelectedRestaurants([]);
+                  }}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue placeholder="記事タイプを選択" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="list">List</SelectItem>
-                    <SelectItem value="essay">Essay</SelectItem>
+                    <SelectItem value="review">レビュー</SelectItem>
+                    <SelectItem value="list">リスト</SelectItem>
+                    <SelectItem value="essay">エッセイ</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -236,7 +267,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel>Published</FormLabel>
+                  <FormLabel>公開状態</FormLabel>
                 </div>
                 <FormControl>
                   <Switch
@@ -249,41 +280,141 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
           />
         </div>
 
+        {/* レストラン選択セクション */}
+        {(articleType === "review" || articleType === "list") && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">
+                {articleType === "review" ? "レビュー対象のレストラン" : "リストに含めるレストラン"}
+              </h3>
+              <Dialog open={restaurantDialogOpen} onOpenChange={setRestaurantDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setRestaurantDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    レストランを追加
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>レストランを選択</DialogTitle>
+                  </DialogHeader>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>店名</TableHead>
+                          <TableHead>料理の種類</TableHead>
+                          <TableHead>価格帯</TableHead>
+                          <TableHead>住所</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {restaurants?.map((restaurant) => (
+                          <TableRow key={restaurant.id}>
+                            <TableCell>{restaurant.name}</TableCell>
+                            <TableCell>{restaurant.cuisine_type}</TableCell>
+                            <TableCell>{restaurant.price_range}</TableCell>
+                            <TableCell>{restaurant.address}</TableCell>
+                            <TableCell>
+                              <Button
+                                size="sm"
+                                onClick={() => {
+                                  handleAddRestaurant(restaurant);
+                                  setRestaurantDialogOpen(false);
+                                }}
+                                disabled={selectedRestaurants.some(
+                                  (r) => r.id === restaurant.id
+                                )}
+                              >
+                                選択
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* 選択されたレストラン一覧 */}
+            <div className="space-y-4">
+              {selectedRestaurants.map((restaurant) => (
+                <div key={restaurant.id} className="relative border rounded-lg p-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleRemoveRestaurant(restaurant.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <h4 className="font-medium mb-2">{restaurant.name}</h4>
+                  {articleType === "list" && (
+                    <Textarea
+                      value={restaurant.description || ""}
+                      onChange={(e) =>
+                        handleRestaurantDescriptionChange(restaurant.id, e.target.value)
+                      }
+                      placeholder="このレストランについての説明を入力してください"
+                      className="mt-2"
+                    />
+                  )}
+                </div>
+              ))}
+              {selectedRestaurants.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  レストランが選択されていません
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 本文コンテンツ */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Content Blocks</h3>
+            <h3 className="text-lg font-medium">本文</h3>
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => addContentBlock('paragraph')}
+                onClick={() => {
+                  const content = form.getValues('content') || defaultContent;
+                  form.setValue('content', {
+                    ...content,
+                    content: [
+                      ...(content.content || []),
+                      { type: 'paragraph', content: [{ text: '' }] }
+                    ],
+                  });
+                }}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Text
+                テキストを追加
               </Button>
-              {articleType !== 'list' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addContentBlock('image')}
-                >
-                  <ImagePlus className="h-4 w-4 mr-2" />
-                  Add Image
-                </Button>
-              )}
-              {articleType === 'list' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addContentBlock('heading')}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Restaurant
-                </Button>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const content = form.getValues('content') || defaultContent;
+                  form.setValue('content', {
+                    ...content,
+                    content: [
+                      ...(content.content || []),
+                      { type: 'image', attrs: { src: '', alt: '', caption: '' } }
+                    ],
+                  });
+                }}
+              >
+                <ImagePlus className="h-4 w-4 mr-2" />
+                画像を追加
+              </Button>
             </div>
           </div>
 
@@ -295,7 +426,12 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
                   variant="ghost"
                   size="icon"
                   className="absolute top-2 right-2"
-                  onClick={() => removeContentBlock(index)}
+                  onClick={() => {
+                    const content = form.getValues('content') || defaultContent;
+                    const newContent = [...content.content];
+                    newContent.splice(index, 1);
+                    form.setValue('content', { ...content, content: newContent });
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -303,8 +439,16 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
                 {block.type === 'paragraph' && (
                   <Textarea
                     value={block.content?.[0]?.text || ''}
-                    onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
-                    placeholder="Enter text here..."
+                    onChange={(e) => {
+                      const content = form.getValues('content') || defaultContent;
+                      const newContent = [...content.content];
+                      newContent[index] = {
+                        ...block,
+                        content: [{ text: e.target.value }],
+                      };
+                      form.setValue('content', { ...content, content: newContent });
+                    }}
+                    placeholder="テキストを入力..."
                     className="min-h-[100px]"
                   />
                 )}
@@ -313,38 +457,43 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
                   <div className="space-y-4">
                     <Input
                       value={block.attrs?.src || ''}
-                      onChange={(e) => updateBlockContent(index, 'src', e.target.value)}
-                      placeholder="Image URL"
+                      onChange={(e) => {
+                        const content = form.getValues('content') || defaultContent;
+                        const newContent = [...content.content];
+                        newContent[index] = {
+                          ...block,
+                          attrs: { ...block.attrs, src: e.target.value },
+                        };
+                        form.setValue('content', { ...content, content: newContent });
+                      }}
+                      placeholder="画像URL"
                     />
                     <Input
                       value={block.attrs?.alt || ''}
-                      onChange={(e) => updateBlockContent(index, 'alt', e.target.value)}
-                      placeholder="Image alt text"
+                      onChange={(e) => {
+                        const content = form.getValues('content') || defaultContent;
+                        const newContent = [...content.content];
+                        newContent[index] = {
+                          ...block,
+                          attrs: { ...block.attrs, alt: e.target.value },
+                        };
+                        form.setValue('content', { ...content, content: newContent });
+                      }}
+                      placeholder="画像の代替テキスト"
                     />
                     <Input
                       value={block.attrs?.caption || ''}
-                      onChange={(e) => updateBlockContent(index, 'caption', e.target.value)}
-                      placeholder="Image caption"
+                      onChange={(e) => {
+                        const content = form.getValues('content') || defaultContent;
+                        const newContent = [...content.content];
+                        newContent[index] = {
+                          ...block,
+                          attrs: { ...block.attrs, caption: e.target.value },
+                        };
+                        form.setValue('content', { ...content, content: newContent });
+                      }}
+                      placeholder="画像のキャプション"
                     />
-                  </div>
-                )}
-
-                {block.type === 'heading' && (
-                  <div className="space-y-4">
-                    <Input
-                      value={block.content?.[0]?.text || ''}
-                      onChange={(e) => updateBlockContent(index, 'text', e.target.value)}
-                      placeholder="Restaurant name"
-                    />
-                    {index < content.content.length - 1 && 
-                     content.content[index + 1].type === 'paragraph' && (
-                      <Textarea
-                        value={content.content[index + 1].content?.[0]?.text || ''}
-                        onChange={(e) => updateBlockContent(index + 1, 'text', e.target.value)}
-                        placeholder="Restaurant description"
-                        className="min-h-[100px]"
-                      />
-                    )}
                   </div>
                 )}
               </div>
@@ -354,10 +503,10 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
+            キャンセル
           </Button>
           <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Saving..." : "Save"}
+            {mutation.isPending ? "保存中..." : "保存"}
           </Button>
         </div>
       </form>
