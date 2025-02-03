@@ -39,6 +39,9 @@ export const restaurants = pgTable("restaurants", {
   price_range: text("price_range", { 
     enum: ["budget", "moderate", "expensive", "luxury"] 
   }).notNull(),
+  status: text("status", {
+    enum: ["published", "unpublished", "draft", "deleted"]
+  }).default("draft").notNull(),
   website: text("website"),
   phone: text("phone"),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -48,8 +51,8 @@ export const article_restaurants = pgTable("article_restaurants", {
   id: serial("id").primaryKey(),
   articleId: integer("article_id").references(() => articles.id).notNull(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
-  order: integer("order").default(0).notNull(), // リスト記事での表示順
-  description: text("description"), // リスト記事での個別コメント
+  order: integer("order").default(0).notNull(),
+  description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 

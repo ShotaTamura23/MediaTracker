@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PlusCircle, Pencil, MapPin } from "lucide-react";
+import { PlusCircle, Pencil, MapPin, MoreHorizontal } from "lucide-react";
 import { insertRestaurantSchema, type SelectRestaurant } from "@db/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,11 +35,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import RestaurantLocationPicker from "@/components/maps/restaurant-location-picker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+
+const statusColors = {
+  published: "bg-green-100 text-green-800",
+  unpublished: "bg-yellow-100 text-yellow-800",
+  draft: "bg-orange-100 text-orange-800",
+  deleted: "bg-red-100 text-red-800",
+};
+
+const statusLabels = {
+  published: "公開",
+  unpublished: "非公開",
+  draft: "下書き",
+  deleted: "削除済み",
+};
 
 export default function AdminRestaurants() {
   const { toast } = useToast();
@@ -62,6 +84,7 @@ export default function AdminRestaurants() {
       longitude: "-0.1278",
       cuisine_type: "washoku",
       price_range: "moderate",
+      status: "draft",
       website: "",
       phone: "",
     },
@@ -92,10 +115,41 @@ export default function AdminRestaurants() {
     },
   });
 
+  const updateRestaurantStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await apiRequest("PATCH", `/api/restaurants/${id}/status`, { status });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "ステータスの更新に失敗しました");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "ステータスを更新しました",
+      });
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "ステータスの更新に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng });
     form.setValue("latitude", lat.toString());
     form.setValue("longitude", lng.toString());
+  };
+
+  const handleStatusChange = (restaurantId: number, newStatus: string) => {
+    updateRestaurantStatusMutation.mutate({
+      id: restaurantId,
+      status: newStatus,
+    });
   };
 
   return (
@@ -289,6 +343,7 @@ export default function AdminRestaurants() {
               <TableHead>店名</TableHead>
               <TableHead>料理の種類</TableHead>
               <TableHead>価格帯</TableHead>
+              <TableHead>ステータス</TableHead>
               <TableHead>住所</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
@@ -299,11 +354,53 @@ export default function AdminRestaurants() {
                 <TableCell className="font-medium">{restaurant.name}</TableCell>
                 <TableCell>{restaurant.cuisine_type}</TableCell>
                 <TableCell>{restaurant.price_range}</TableCell>
+                 <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={statusColors[restaurant.status as keyof typeof statusColors]}
+                  >
+                    {statusLabels[restaurant.status as keyof typeof statusLabels]}
+                  </Badge>
+                </TableCell>
                 <TableCell>{restaurant.address}</TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleStatusChange(restaurant.id, "published")
+                        }
+                      >
+                        公開する
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          handleStatusChange(restaurant.id, "unpublished")
+                        }
+                      >
+                        非公開にする
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(restaurant.id, "draft")}
+                      >
+                        下書きに戻す
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() =>
+                          handleStatusChange(restaurant.id, "deleted")
+                        }
+                      >
+                        削除する
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
