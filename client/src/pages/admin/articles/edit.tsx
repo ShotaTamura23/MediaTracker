@@ -123,6 +123,30 @@ export default function EditArticlePage() {
     );
   }
 
+    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "エラー",
+        description: "画像ファイルを選択してください。",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setPreviewImage(base64String);
+      form.setValue('coverImage', base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddRestaurant = (restaurant: SelectRestaurant) => {
     const articleType = form.watch("type");
     if (articleType === "review" && selectedRestaurants.length > 0) {
