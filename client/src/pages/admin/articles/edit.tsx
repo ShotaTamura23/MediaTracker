@@ -53,6 +53,18 @@ const editArticleSchema = z.object({
 
 type FormValues = z.infer<typeof editArticleSchema>;
 
+type ArticleResponse = {
+  id: number;
+  title: string;
+  slug: string;
+  content: any;
+  excerpt: string;
+  coverImage: string;
+  type: "review" | "list";
+  published: boolean;
+  restaurants?: Array<SelectRestaurant & { description?: string; order: number }>;
+};
+
 export default function EditArticlePage() {
   const [match, params] = useRoute("/admin/articles/edit/:id");
   const [, setLocation] = useLocation();
@@ -61,7 +73,7 @@ export default function EditArticlePage() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
 
-  const { data: article, isLoading: isLoadingArticle } = useQuery({
+  const { data: article, isLoading: isLoadingArticle } = useQuery<ArticleResponse>({
     queryKey: [`/api/articles/id/${params?.id}`],
     enabled: !!params?.id,
   });
@@ -86,27 +98,21 @@ export default function EditArticlePage() {
   // Update form values when article data is loaded
   useEffect(() => {
     if (article) {
-      console.log('Loading article data:', article); // デバッグ用ログ
+      console.log('Loading article data:', article);
 
       // Reset form with all values
       form.reset({
-        title: article.title || "",
-        slug: article.slug || "",
-        content: article.content || { 
-          type: "doc", 
-          content: [{ type: "paragraph", content: [{ text: "" }] }] 
-        },
-        excerpt: article.excerpt || "",
-        coverImage: article.coverImage || "",
-        type: article.type || "review",
-        published: Boolean(article.published),
+        title: article.title,
+        slug: article.slug,
+        content: article.content,
+        excerpt: article.excerpt,
+        coverImage: article.coverImage,
+        type: article.type,
+        published: article.published,
       });
 
       // Update UI state
-      if (article.coverImage) {
-        setPreviewImage(article.coverImage);
-      }
-
+      setPreviewImage(article.coverImage);
       if (article.restaurants) {
         setSelectedRestaurants(article.restaurants);
       }
