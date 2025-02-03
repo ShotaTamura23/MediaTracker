@@ -72,7 +72,6 @@ export default function EditArticlePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-  // Initial state for editor content
   const [editorContent, setEditorContent] = useState<any>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
@@ -99,49 +98,35 @@ export default function EditArticlePage() {
     }
   });
 
-
+  // Initialize editor content when article data is loaded
   useEffect(() => {
     if (article) {
       console.log('Loading article data:', article);
+      console.log('Article content:', article.content);
 
-      // Parse content if it's a string
-      let parsedContent;
-      try {
-        parsedContent = typeof article.content === 'string'
-          ? JSON.parse(article.content)
-          : article.content;
-
-        console.log('Parsed content:', parsedContent);
-
-        // Ensure we have a valid editor content structure
-        if (!parsedContent || !parsedContent.type) {
-          parsedContent = {
-            type: "doc",
-            content: []
-          };
-        }
-      } catch (error) {
-        console.error('Error parsing article content:', error);
-        parsedContent = {
+      // Ensure content has the correct structure
+      let contentToSet = article.content;
+      if (!contentToSet || typeof contentToSet !== 'object' || !contentToSet.type) {
+        contentToSet = {
           type: "doc",
           content: []
         };
       }
 
-      setEditorContent(parsedContent);
+      console.log('Setting editor content:', contentToSet);
+      setEditorContent(contentToSet);
 
       // Reset form with all values
       form.reset({
         title: article.title,
         slug: article.slug,
-        content: parsedContent,
+        content: contentToSet,
         excerpt: article.excerpt,
         coverImage: article.coverImage,
         type: article.type,
         published: article.published,
       });
 
-      // Update UI state
       setPreviewImage(article.coverImage);
       if (article.restaurants) {
         setSelectedRestaurants(article.restaurants);
@@ -153,16 +138,17 @@ export default function EditArticlePage() {
     mutationFn: async (values: FormValues) => {
       if (!params?.id) throw new Error("Article ID is required");
 
-      // Always use the latest editor content
-      const articleData = {
+      // Ensure we're sending the latest editor content
+      const formData = {
         ...values,
         content: editorContent,
         restaurants: selectedRestaurants,
       };
 
-      console.log('Sending article data:', articleData);
+      console.log('Sending article update:', formData);
+      console.log('Editor content structure:', editorContent);
 
-      const res = await apiRequest("PATCH", `/api/articles/${params.id}`, articleData);
+      const res = await apiRequest("PATCH", `/api/articles/${params.id}`, formData);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update article");
@@ -170,7 +156,6 @@ export default function EditArticlePage() {
       return res.json();
     },
     onSuccess: () => {
-      // Invalidate both queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
       queryClient.invalidateQueries({ queryKey: [`/api/articles/id/${params?.id}`] });
 
@@ -179,12 +164,12 @@ export default function EditArticlePage() {
         description: "記事が正常に更新されました。",
       });
 
-      // Navigate after a short delay to ensure toast is visible
       setTimeout(() => {
         setLocation("/admin/articles");
       }, 500);
     },
     onError: (error: Error) => {
+      console.error('Mutation error:', error);
       toast({
         title: "記事の更新に失敗しました",
         description: error.message,
@@ -192,6 +177,13 @@ export default function EditArticlePage() {
       });
     },
   });
+
+  // Editor content update handler
+  const handleEditorUpdate = (newContent: any) => {
+    console.log('Editor content updated:', newContent);
+    setEditorContent(newContent);
+  };
+
 
   if (isLoadingArticle) {
     return (
@@ -253,22 +245,15 @@ export default function EditArticlePage() {
     );
   };
 
-    // Content update handler for TipTap editor
-  const handleEditorUpdate = (newContent: any) => {
-    console.log('Editor content updated:', newContent);
-    setEditorContent(newContent);
-    // Ensure the form's content field is also updated
-    form.setValue('content', newContent);
-  };
 
   // Form submission handler
   const onSubmit = async (values: FormValues) => {
     console.log('Submitting form with values:', values);
-    // Ensure we're using the latest editor content
     const formData = {
       ...values,
       content: editorContent, // Use the latest editor content
     };
+    console.log('Sending formData:', formData);
     mutation.mutate(formData);
   };
 

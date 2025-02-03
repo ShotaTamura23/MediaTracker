@@ -37,7 +37,6 @@ export function registerRoutes(app: Express): Server {
     res.json(transformedArticles);
   });
 
-  // Get article by ID (新規追加)
   app.get("/api/articles/id/:id", async (req, res) => {
     const [article] = await db.query.articles.findMany({
       where: eq(articles.id, parseInt(req.params.id)),
@@ -53,11 +52,20 @@ export function registerRoutes(app: Express): Server {
 
     if (!article) return res.sendStatus(404);
 
+    // Always ensure content is properly parsed
+    let parsedContent;
+    try {
+      parsedContent = typeof article.content === 'string'
+        ? JSON.parse(article.content)
+        : article.content;
+    } catch (error) {
+      console.error('Error parsing article content:', error);
+      parsedContent = { type: "doc", content: [] };
+    }
+
     const transformedArticle = {
       ...article,
-      content: typeof article.content === 'string'
-        ? JSON.parse(article.content)
-        : article.content,
+      content: parsedContent,
       restaurants: article.restaurants
         .sort((a, b) => a.order - b.order)
         .map(ar => ({
@@ -67,8 +75,7 @@ export function registerRoutes(app: Express): Server {
         })),
     };
 
-    // Log the transformed content for debugging
-    console.log('Retrieved article with content:', transformedArticle.content);
+    console.log('Retrieved article content structure:', JSON.stringify(transformedArticle.content, null, 2));
     res.json(transformedArticle);
   });
 
@@ -133,13 +140,21 @@ export function registerRoutes(app: Express): Server {
     const articleId = parseInt(req.params.id);
 
     try {
-      const article = await db.transaction(async (tx) => {
-        // Always stringify the content before saving
-        const contentToSave = typeof articleData.content === 'string'
-          ? articleData.content
-          : JSON.stringify(articleData.content);
+      console.log('Received article update data:', JSON.stringify(articleData.content, null, 2));
 
-        console.log('Saving article content:', contentToSave);
+      const article = await db.transaction(async (tx) => {
+        // Ensure content is properly stringified
+        let contentToSave;
+        try {
+          contentToSave = typeof articleData.content === 'string'
+            ? articleData.content
+            : JSON.stringify(articleData.content);
+        } catch (error) {
+          console.error('Error stringifying content:', error);
+          contentToSave = JSON.stringify({ type: "doc", content: [] });
+        }
+
+        console.log('Saving article with content:', contentToSave);
 
         // Update article
         const [updatedArticle] = await tx.update(articles)
@@ -155,11 +170,10 @@ export function registerRoutes(app: Express): Server {
           throw new Error('Article not found');
         }
 
-        // Delete existing restaurant relations
+        // Handle restaurant relations
         await tx.delete(article_restaurants)
           .where(eq(article_restaurants.articleId, articleId));
 
-        // Insert new restaurant relations if any
         if (articleRestaurants && articleRestaurants.length > 0) {
           await tx.insert(article_restaurants)
             .values(
@@ -172,20 +186,27 @@ export function registerRoutes(app: Express): Server {
             );
         }
 
-        // Parse the content before returning
+        // Parse content before returning
+        let parsedContent;
+        try {
+          parsedContent = typeof updatedArticle.content === 'string'
+            ? JSON.parse(updatedArticle.content)
+            : updatedArticle.content;
+        } catch (error) {
+          console.error('Error parsing updated content:', error);
+          parsedContent = { type: "doc", content: [] };
+        }
+
         return {
           ...updatedArticle,
-          content: typeof updatedArticle.content === 'string'
-            ? JSON.parse(updatedArticle.content)
-            : updatedArticle.content
+          content: parsedContent
         };
       });
 
-      console.log('Updated article, returning:', article);
+      console.log('Successfully updated article, returning:', JSON.stringify(article.content, null, 2));
       res.json(article);
     } catch (error: any) {
       console.error('Error updating article:', error);
-
       if (error.code === '23505') {
         res.status(400).json({
           message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
