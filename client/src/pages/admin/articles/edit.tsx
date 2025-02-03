@@ -39,6 +39,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import AdminLayout from "@/components/layout/admin-layout";
 
 const editArticleSchema = z.object({
   title: z.string().min(1, "タイトルは必須です"),
@@ -215,284 +216,286 @@ export default function EditArticlePage() {
   const articleType = form.watch('type');
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>記事を編集</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
-              className="space-y-6"
-            >
-              <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="basic">基本情報</TabsTrigger>
-                  <TabsTrigger value="restaurants">レストラン情報</TabsTrigger>
-                </TabsList>
+    <AdminLayout>
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>記事を編集</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+                className="space-y-6"
+              >
+                <Tabs defaultValue="basic" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="basic">基本情報</TabsTrigger>
+                    <TabsTrigger value="restaurants">レストラン情報</TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="basic" className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>タイトル</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>スラッグ</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="content"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>本文</FormLabel>
-                        <FormControl>
-                          <TipTapEditor
-                            content={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="excerpt"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>抜粋</FormLabel>
-                        <FormControl>
-                          <Textarea {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>記事タイプ</FormLabel>
-                        <Select
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            setSelectedRestaurants([]);
-                          }}
-                          defaultValue={field.value}
-                        >
+                  <TabsContent value="basic" className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>タイトル</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="記事タイプを選択" />
-                            </SelectTrigger>
+                            <Input {...field} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="review">レビュー</SelectItem>
-                            <SelectItem value="list">リスト</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="published"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">公開ステータス</FormLabel>
-                          <div className="text-sm text-muted-foreground">
-                            この記事を公開するかどうかを設定します
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>スラッグ</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="coverImage"
-                    render={({ field: { value, onChange, ...field } }) => (
-                      <FormItem>
-                        <FormLabel>カバー画像</FormLabel>
-                        <FormControl>
-                          <div className="space-y-4">
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageChange}
-                              {...field}
+                    <FormField
+                      control={form.control}
+                      name="content"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>本文</FormLabel>
+                          <FormControl>
+                            <TipTapEditor
+                              content={field.value}
+                              onChange={field.onChange}
                             />
-                            {(previewImage || value) && (
-                              <img
-                                src={previewImage || value}
-                                alt="プレビュー"
-                                className="max-w-md rounded-lg"
-                              />
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </TabsContent>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                <TabsContent value="restaurants" className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium">
-                      {articleType === "review"
-                        ? "レビュー対象のレストラン"
-                        : "リストに含めるレストラン"}
-                    </h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          レストランを追加
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>レストランを選択</DialogTitle>
-                        </DialogHeader>
-                        <div className="max-h-[400px] overflow-y-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>店名</TableHead>
-                                <TableHead>料理の種類</TableHead>
-                                <TableHead>価格帯</TableHead>
-                                <TableHead>住所</TableHead>
-                                <TableHead></TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {restaurants?.map((restaurant) => (
-                                <TableRow key={restaurant.id}>
-                                  <TableCell>{restaurant.name}</TableCell>
-                                  <TableCell>{restaurant.cuisine_type}</TableCell>
-                                  <TableCell>{restaurant.price_range}</TableCell>
-                                  <TableCell>{restaurant.address}</TableCell>
-                                  <TableCell>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleAddRestaurant(restaurant)}
-                                      disabled={selectedRestaurants.some(
-                                        (r) => r.id === restaurant.id
-                                      )}
-                                    >
-                                      選択
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
+                    <FormField
+                      control={form.control}
+                      name="excerpt"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>抜粋</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  {selectedRestaurants.length > 0 ? (
-                    <div className="space-y-4">
-                      {selectedRestaurants.map((restaurant) => (
-                        <Card key={restaurant.id}>
-                          <CardContent className="pt-6">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h4 className="font-medium">{restaurant.name}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {restaurant.address}
-                                </p>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveRestaurant(restaurant.id)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>記事タイプ</FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              setSelectedRestaurants([]);
+                            }}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="記事タイプを選択" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="review">レビュー</SelectItem>
+                              <SelectItem value="list">リスト</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="published"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">公開ステータス</FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              この記事を公開するかどうかを設定します
                             </div>
-                            {articleType === "list" && (
-                              <Textarea
-                                placeholder="このレストランについての説明を入力してください"
-                                value={restaurant.description}
-                                onChange={(e) =>
-                                  handleRestaurantDescriptionChange(
-                                    restaurant.id,
-                                    e.target.value
-                                  )
-                                }
-                                className="mt-2"
-                              />
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      レストランが選択されていません
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
 
-              <div className="flex justify-end gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLocation("/admin/articles")}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={mutation.isPending}
-                >
-                  {mutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  記事を更新
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+                    <FormField
+                      control={form.control}
+                      name="coverImage"
+                      render={({ field: { value, onChange, ...field } }) => (
+                        <FormItem>
+                          <FormLabel>カバー画像</FormLabel>
+                          <FormControl>
+                            <div className="space-y-4">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                {...field}
+                              />
+                              {(previewImage || value) && (
+                                <img
+                                  src={previewImage || value}
+                                  alt="プレビュー"
+                                  className="max-w-md rounded-lg"
+                                />
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="restaurants" className="space-y-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-medium">
+                        {articleType === "review"
+                          ? "レビュー対象のレストラン"
+                          : "リストに含めるレストラン"}
+                      </h3>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            レストランを追加
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>レストランを選択</DialogTitle>
+                          </DialogHeader>
+                          <div className="max-h-[400px] overflow-y-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>店名</TableHead>
+                                  <TableHead>料理の種類</TableHead>
+                                  <TableHead>価格帯</TableHead>
+                                  <TableHead>住所</TableHead>
+                                  <TableHead></TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {restaurants?.map((restaurant) => (
+                                  <TableRow key={restaurant.id}>
+                                    <TableCell>{restaurant.name}</TableCell>
+                                    <TableCell>{restaurant.cuisine_type}</TableCell>
+                                    <TableCell>{restaurant.price_range}</TableCell>
+                                    <TableCell>{restaurant.address}</TableCell>
+                                    <TableCell>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleAddRestaurant(restaurant)}
+                                        disabled={selectedRestaurants.some(
+                                          (r) => r.id === restaurant.id
+                                        )}
+                                      >
+                                        選択
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+
+                    {selectedRestaurants.length > 0 ? (
+                      <div className="space-y-4">
+                        {selectedRestaurants.map((restaurant) => (
+                          <Card key={restaurant.id}>
+                            <CardContent className="pt-6">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h4 className="font-medium">{restaurant.name}</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {restaurant.address}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveRestaurant(restaurant.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              {articleType === "list" && (
+                                <Textarea
+                                  placeholder="このレストランについての説明を入力してください"
+                                  value={restaurant.description}
+                                  onChange={(e) =>
+                                    handleRestaurantDescriptionChange(
+                                      restaurant.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  className="mt-2"
+                                />
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        レストランが選択されていません
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+
+                <div className="flex justify-end gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setLocation("/admin/articles")}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={mutation.isPending}
+                  >
+                    {mutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    記事を更新
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 }
