@@ -61,10 +61,41 @@ export function registerRoutes(app: Express): Server {
     res.json(allRestaurants);
   });
 
+  // Get only published restaurants
+  app.get("/api/restaurants/published", async (req, res) => {
+    const publishedRestaurants = await db.select()
+      .from(restaurants)
+      .where(eq(restaurants.status, "published"));
+    res.json(publishedRestaurants);
+  });
+
+  // Create restaurant
   app.post("/api/restaurants", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
     const restaurant = await db.insert(restaurants).values(req.body).returning();
     res.status(201).json(restaurant[0]);
+  });
+
+  // Update restaurant
+  app.patch("/api/restaurants/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    const [restaurant] = await db.update(restaurants)
+      .set(req.body)
+      .where(eq(restaurants.id, parseInt(req.params.id)))
+      .returning();
+    if (!restaurant) return res.sendStatus(404);
+    res.json(restaurant);
+  });
+
+  // Update restaurant status
+  app.patch("/api/restaurants/:id/status", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+    const [restaurant] = await db.update(restaurants)
+      .set({ status: req.body.status })
+      .where(eq(restaurants.id, parseInt(req.params.id)))
+      .returning();
+    if (!restaurant) return res.sendStatus(404);
+    res.json(restaurant);
   });
 
   // Bookmarks
