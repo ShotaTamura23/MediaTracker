@@ -85,12 +85,23 @@ export function registerRoutes(app: Express): Server {
     try {
       const { restaurants: articleRestaurants, ...articleData } = req.body;
 
+      // Generate slug from title
+      const baseSlug = articleData.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      // Add timestamp to make slug unique
+      const timestamp = Date.now().toString(36);
+      const slug = `${baseSlug}-${timestamp}`;
+
       // Begin transaction
       const article = await db.transaction(async (tx) => {
-        // Insert article
+        // Insert article with generated slug
         const [newArticle] = await tx.insert(articles)
           .values({
             ...articleData,
+            slug,
             authorId: req.user.id,
             content: typeof articleData.content === 'string'
               ? articleData.content
@@ -118,18 +129,10 @@ export function registerRoutes(app: Express): Server {
       res.status(201).json(article);
     } catch (error: any) {
       console.error('Error creating article:', error);
-
-      if (error.code === '23505') {
-        res.status(400).json({
-          message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
-          code: 'DUPLICATE_SLUG'
-        });
-      } else {
-        res.status(500).json({
-          message: '記事の作成中にエラーが発生しました。',
-          error: error.message
-        });
-      }
+      res.status(500).json({
+        message: '記事の作成中にエラーが発生しました。',
+        error: error.message
+      });
     }
   });
 
