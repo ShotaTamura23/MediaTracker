@@ -101,16 +101,17 @@ export default function EditArticlePage() {
     }
   });
 
-  // Initialize form and editor when article data is loaded
   useEffect(() => {
     if (article) {
-      // Ensure content has the correct structure
+      console.log('Article loaded:', article);
+      console.log('Original content:', article.content);
+
       let contentToSet = article.content;
 
-      // If content is a string (JSON), parse it
       if (typeof contentToSet === 'string') {
         try {
           contentToSet = JSON.parse(contentToSet);
+          console.log('Parsed content:', contentToSet);
         } catch (e) {
           console.error('Failed to parse article content:', e);
           contentToSet = {
@@ -118,25 +119,26 @@ export default function EditArticlePage() {
             content: [
               {
                 type: "paragraph",
-                content: [{ type: "text", text: contentToSet }]
+                content: [{ type: "text", text: String(contentToSet) }]
               }
             ]
           };
+          console.log('Created fallback content:', contentToSet);
         }
       }
 
-      // If content is still not in the correct format, create a default structure
       if (!contentToSet || typeof contentToSet !== 'object' || !contentToSet.type) {
         contentToSet = {
           type: "doc",
           content: []
         };
+        console.log('Created empty document structure:', contentToSet);
       }
 
-      // Set editor content
+      console.log('Final editor content to set:', contentToSet);
+
       setEditorContent(contentToSet);
 
-      // Reset form with all values
       form.reset({
         title: article.title,
         slug: article.slug,
@@ -148,7 +150,6 @@ export default function EditArticlePage() {
         isNewOpening: article.isNewOpening,
       });
 
-      setPreviewImage(article.coverImage);
       if (article.restaurants) {
         setSelectedRestaurants(article.restaurants);
       }
@@ -159,7 +160,6 @@ export default function EditArticlePage() {
     mutationFn: async (values: FormValues) => {
       if (!params?.id) throw new Error("Article ID is required");
 
-      // Ensure we're sending the latest editor content
       const formData = {
         ...values,
         content: editorContent,
@@ -196,8 +196,8 @@ export default function EditArticlePage() {
     },
   });
 
-  // Editor content update handler with proper form synchronization
   const handleEditorUpdate = (newContent: any) => {
+    console.log('Editor content updated:', newContent);
     setEditorContent(newContent);
     form.setValue('content', newContent, { 
       shouldDirty: true,
@@ -218,7 +218,6 @@ export default function EditArticlePage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check if file is an image
     if (!file.type.startsWith('image/')) {
       toast({
         title: "エラー",
@@ -228,7 +227,6 @@ export default function EditArticlePage() {
       return;
     }
 
-    // Convert to base64
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64String = reader.result as string;
@@ -266,8 +264,6 @@ export default function EditArticlePage() {
     );
   };
 
-
-  // Form submission handler
   const onSubmit = async (values: FormValues) => {
     if (!editorContent) {
       toast({
