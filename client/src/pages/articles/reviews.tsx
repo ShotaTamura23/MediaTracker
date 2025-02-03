@@ -7,7 +7,6 @@ import RestaurantMap from "@/components/maps/restaurant-map";
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -23,15 +22,20 @@ export default function ReviewsPage() {
     queryKey: ["/api/articles"],
   });
 
-  const reviews = articles?.filter(article => article.type === "review" && article.published) ?? [];
+  // Filter only published review articles
+  const reviews = articles?.filter(
+    article => article.type === "review" && article.published
+  ) ?? [];
   const totalPages = Math.ceil(reviews.length / ITEMS_PER_PAGE);
 
   // Get current page's articles
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentReviews = reviews.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Get all restaurants from current page's articles
-  const restaurants = currentReviews.flatMap(article => article.restaurants || []);
+  // Get restaurants from current page's articles
+  const currentRestaurants = currentReviews
+    .flatMap(article => article.restaurants || [])
+    .filter(restaurant => restaurant.status !== "deleted");
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -59,15 +63,23 @@ export default function ReviewsPage() {
                     <PaginationContent>
                       <PaginationItem>
                         <PaginationPrevious 
-                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                          disabled={currentPage === 1}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(p => Math.max(1, p - 1));
+                          }}
+                          aria-disabled={currentPage === 1}
                         />
                       </PaginationItem>
 
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <PaginationItem key={page}>
                           <PaginationLink
-                            onClick={() => setCurrentPage(page)}
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(page);
+                            }}
                             isActive={currentPage === page}
                           >
                             {page}
@@ -77,8 +89,12 @@ export default function ReviewsPage() {
 
                       <PaginationItem>
                         <PaginationNext
-                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                          disabled={currentPage === totalPages}
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(p => Math.min(totalPages, p + 1));
+                          }}
+                          aria-disabled={currentPage === totalPages}
                         />
                       </PaginationItem>
                     </PaginationContent>
@@ -93,7 +109,7 @@ export default function ReviewsPage() {
           <Card className="p-4">
             <h2 className="text-2xl font-semibold mb-4">掲載レストラン</h2>
             <div className="h-[600px]">
-              <RestaurantMap restaurants={restaurants} />
+              <RestaurantMap restaurants={currentRestaurants} />
             </div>
           </Card>
         </div>
