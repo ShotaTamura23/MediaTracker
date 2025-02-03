@@ -6,6 +6,7 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
+// Improved error logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -39,12 +40,16 @@ app.use((req, res, next) => {
 (async () => {
   const server = registerRoutes(app);
 
+  // Enhanced error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('Server Error:', err);
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    res.status(status).json({ 
+      message,
+      error: err.code ? { code: err.code, detail: err.detail } : undefined
+    });
   });
 
   // importantly only setup vite in development and after
@@ -60,6 +65,6 @@ app.use((req, res, next) => {
   // this serves both the API and the client
   const PORT = 5000;
   server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
+    log(`Server is running on http://0.0.0.0:${PORT}`);
   });
 })();

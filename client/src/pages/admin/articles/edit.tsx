@@ -89,7 +89,7 @@ export default function EditArticlePage() {
     defaultValues: {
       title: "",
       slug: "",
-      content: { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] },
+      content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }] },
       excerpt: "",
       coverImage: "",
       type: "review",
@@ -147,7 +147,7 @@ export default function EditArticlePage() {
       return res.json();
     },
     onSuccess: () => {
-      // First invalidate the queries
+      // Invalidate both queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
       queryClient.invalidateQueries({ queryKey: [`/api/articles/id/${params?.id}`] });
 
