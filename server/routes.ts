@@ -139,10 +139,17 @@ export function registerRoutes(app: Express): Server {
     const { restaurants: articleRestaurants, ...articleData } = req.body;
     const articleId = parseInt(req.params.id);
 
+    // Add logging to debug the update
+    console.log('Updating article:', articleId);
+    console.log('Article data:', articleData);
+
     const article = await db.transaction(async (tx) => {
       // Update article
       const [updatedArticle] = await tx.update(articles)
-        .set(articleData)
+        .set({
+          ...articleData,
+          updatedAt: new Date(), // 更新日時を明示的に設定
+        })
         .where(eq(articles.id, articleId))
         .returning();
 
@@ -169,8 +176,12 @@ export function registerRoutes(app: Express): Server {
     });
 
     if (!article) return res.sendStatus(404);
+
+    // Add logging to debug the response
+    console.log('Updated article:', article);
     res.json(article);
   });
+
 
   app.delete("/api/articles/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
