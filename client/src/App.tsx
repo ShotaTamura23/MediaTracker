@@ -16,7 +16,6 @@ import AuthPage from "./pages/auth-page";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminArticles from "./pages/admin/articles";
 import AdminRestaurants from "./pages/admin/restaurants";
-import AdminSettings from "./pages/admin/settings";
 import CreateArticle from "./pages/admin/articles/create";
 import EditArticle from "./pages/admin/articles/edit";
 import AdminLoginPage from "./pages/admin/login";
@@ -37,7 +36,6 @@ function Router() {
       <AdminRoute path="/admin/dashboard" component={AdminDashboard} />
       <AdminRoute path="/admin/articles" component={AdminArticles} />
       <AdminRoute path="/admin/restaurants" component={AdminRestaurants} />
-      <AdminRoute path="/admin/settings" component={AdminSettings} />
       <AdminRoute path="/admin/articles/create" component={CreateArticle} />
       <AdminRoute path="/admin/articles/edit/:id" component={EditArticle} />
       <Route component={NotFound} />
