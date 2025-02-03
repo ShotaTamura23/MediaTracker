@@ -3,7 +3,7 @@ import { useRoute } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bookmark, Share2 } from "lucide-react";
+import { Bookmark, Share2, MapPin, Phone, Globe } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { SelectArticle } from "@db/schema";
@@ -62,6 +62,49 @@ export default function ArticlePage() {
     ? JSON.parse(article.content)
     : article.content;
 
+  // Restaurant information card component
+  const RestaurantInfo = ({ restaurant }: { restaurant: any }) => (
+    <div className="space-y-4">
+      <div>
+        <h3 className="text-xl font-semibold">{restaurant.name}</h3>
+        <div className="flex items-center gap-2 mt-2">
+          <Badge>{restaurant.cuisine_type}</Badge>
+          <Badge variant="outline">{restaurant.price_range}</Badge>
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm text-muted-foreground">
+        <p className="text-base text-foreground">{restaurant.description}</p>
+
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          <span>{restaurant.address}</span>
+        </div>
+
+        {restaurant.phone && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            <span>{restaurant.phone}</span>
+          </div>
+        )}
+
+        {restaurant.website && (
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            <a
+              href={restaurant.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              ウェブサイトを開く
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   // For list-type articles, show restaurants with map
   if (article.type === 'list' && article.restaurants) {
     return (
@@ -102,13 +145,8 @@ export default function ArticlePage() {
                       <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center text-lg font-bold">
                         {index + 1}
                       </Badge>
-                      <div>
-                        <h2 className="text-2xl font-bold mb-2">{restaurant.name}</h2>
-                        <div className="flex items-center gap-2 mb-4">
-                          <Badge>{restaurant.cuisine_type}</Badge>
-                          <Badge variant="outline">{restaurant.price_range}</Badge>
-                        </div>
-                        <p className="text-muted-foreground">{restaurant.description}</p>
+                      <div className="flex-1">
+                        <RestaurantInfo restaurant={restaurant} />
                       </div>
                     </div>
                   </div>
@@ -178,16 +216,7 @@ export default function ArticlePage() {
             {article.type === 'review' && article.restaurants && article.restaurants[0] && (
               <Card className="mb-8 p-6">
                 <h2 className="text-2xl font-bold mb-4">レビュー対象店舗</h2>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">{article.restaurants[0].name}</h3>
-                  <div className="flex items-center gap-2">
-                    <Badge>{article.restaurants[0].cuisine_type}</Badge>
-                    <Badge variant="outline">{article.restaurants[0].price_range}</Badge>
-                  </div>
-                  {article.restaurants[0].description && (
-                    <p className="text-muted-foreground mt-2">{article.restaurants[0].description}</p>
-                  )}
-                </div>
+                <RestaurantInfo restaurant={article.restaurants[0]} />
               </Card>
             )}
 
