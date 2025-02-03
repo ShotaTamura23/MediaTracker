@@ -21,7 +21,9 @@ export default function HomePage() {
     );
   }
 
-  const featuredArticle = articles?.[0];
+  // Filter published articles only
+  const publishedArticles = articles?.filter(article => article.published) || [];
+  const featuredArticle = publishedArticles[0];
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -93,7 +95,7 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="grid gap-8">
-              {articles?.slice(1).map((article) => (
+              {publishedArticles.slice(1).map((article) => (
                 <ArticleCard key={article.id} article={article} />
               ))}
             </div>
