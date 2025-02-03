@@ -38,11 +38,24 @@ export default function ReviewsPage() {
     .filter(restaurant => restaurant.status !== "deleted");
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">レストランレビュー</h1>
+    <div className="min-h-screen bg-background">
+      {/* Map Section - Full width on mobile, side panel on desktop */}
+      <div className="lg:fixed lg:right-0 lg:top-0 lg:w-[400px] lg:h-screen bg-background z-10 p-4 border-l">
+        <Card className="h-full">
+          <div className="h-full p-4">
+            <h2 className="text-2xl font-semibold mb-4">掲載レストラン</h2>
+            <div className="h-[calc(100%-4rem)]">
+              <RestaurantMap restaurants={currentRestaurants} />
+            </div>
+          </div>
+        </Card>
+      </div>
 
-      <div className="grid lg:grid-cols-[1fr,400px] gap-8">
-        <div>
+      {/* Main Content */}
+      <div className="lg:pr-[400px]">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold mb-8">レストランレビュー</h1>
+
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[50vh]">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -51,14 +64,17 @@ export default function ReviewsPage() {
             <p className="text-muted-foreground">レビュー記事はまだありません。</p>
           ) : (
             <>
-              <div className="grid gap-6">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentReviews.map((article) => (
-                  <ArticleCard key={article.id} article={article} />
+                  <ArticleCard 
+                    key={article.id} 
+                    article={article} 
+                  />
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-8">
+                <div className="mt-8 flex justify-center">
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
@@ -103,15 +119,6 @@ export default function ReviewsPage() {
               )}
             </>
           )}
-        </div>
-
-        <div className="lg:sticky lg:top-4 h-fit">
-          <Card className="p-4">
-            <h2 className="text-2xl font-semibold mb-4">掲載レストラン</h2>
-            <div className="h-[600px]">
-              <RestaurantMap restaurants={currentRestaurants} />
-            </div>
-          </Card>
         </div>
       </div>
     </div>
