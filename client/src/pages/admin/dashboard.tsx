@@ -20,6 +20,7 @@ import {
   Mail,
   PlusCircle,
   Settings,
+  Store,
 } from "lucide-react";
 import { SelectArticle, SelectNewsletter } from "@db/schema";
 
@@ -96,6 +97,12 @@ export default function AdminDashboard() {
             <Link href="/admin/articles">
               <Settings className="h-4 w-4 mr-2" />
               記事管理
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/admin/restaurants">
+              <Store className="h-4 w-4 mr-2" />
+              レストラン管理
             </Link>
           </Button>
         </div>
