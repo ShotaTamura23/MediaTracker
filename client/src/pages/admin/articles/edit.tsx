@@ -107,8 +107,8 @@ export default function EditArticlePage() {
       // Parse content if it's a string
       let parsedContent;
       try {
-        parsedContent = typeof article.content === 'string' 
-          ? JSON.parse(article.content) 
+        parsedContent = typeof article.content === 'string'
+          ? JSON.parse(article.content)
           : article.content;
 
         console.log('Parsed content:', parsedContent);
@@ -253,6 +253,26 @@ export default function EditArticlePage() {
     );
   };
 
+    // Content update handler for TipTap editor
+  const handleEditorUpdate = (newContent: any) => {
+    console.log('Editor content updated:', newContent);
+    setEditorContent(newContent);
+    // Ensure the form's content field is also updated
+    form.setValue('content', newContent);
+  };
+
+  // Form submission handler
+  const onSubmit = async (values: FormValues) => {
+    console.log('Submitting form with values:', values);
+    // Ensure we're using the latest editor content
+    const formData = {
+      ...values,
+      content: editorContent, // Use the latest editor content
+    };
+    mutation.mutate(formData);
+  };
+
+
   const articleType = form.watch('type');
 
   return (
@@ -265,7 +285,7 @@ export default function EditArticlePage() {
           <CardContent>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-6"
               >
                 <Tabs defaultValue="basic" className="w-full">
@@ -312,11 +332,7 @@ export default function EditArticlePage() {
                           <FormControl>
                             <TipTapEditor
                               content={editorContent}
-                              onChange={(newContent) => {
-                                console.log('Editor content updated:', newContent);
-                                setEditorContent(newContent);
-                                field.onChange(newContent);
-                              }}
+                              onChange={handleEditorUpdate}
                             />
                           </FormControl>
                           <FormMessage />
