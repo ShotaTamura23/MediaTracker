@@ -260,11 +260,31 @@ export function registerRoutes(app: Express): Server {
 
   app.delete("/api/articles/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
-    const [article] = await db.delete(articles)
-      .where(eq(articles.id, parseInt(req.params.id)))
-      .returning();
-    if (!article) return res.sendStatus(404);
-    res.sendStatus(200);
+
+    try {
+      await db.transaction(async (tx) => {
+        // First delete related article_restaurants records
+        await tx.delete(article_restaurants)
+          .where(eq(article_restaurants.articleId, parseInt(req.params.id)));
+
+        // Then delete the article
+        const [article] = await tx.delete(articles)
+          .where(eq(articles.id, parseInt(req.params.id)))
+          .returning();
+
+        if (!article) {
+          throw new Error("Article not found");
+        }
+      });
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      res.status(500).json({
+        message: '記事の削除中にエラーが発生しました。',
+        error: error.message
+      });
+    }
   });
 
   // Restaurants
