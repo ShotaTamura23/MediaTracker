@@ -85,26 +85,20 @@ export default function EditArticlePage() {
   // Update form values when article data is loaded
   useEffect(() => {
     if (article) {
-      // Parse content if it's a string
-      let parsedContent;
-      try {
-        parsedContent = typeof article.content === 'string' 
-          ? JSON.parse(article.content)
-          : article.content;
-      } catch (e) {
-        console.error('Error parsing content:', e);
-        parsedContent = { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] };
-      }
+      console.log('Loading article data:', article); // デバッグ用ログ
 
       // Reset form with all values
       form.reset({
-        title: article.title,
-        slug: article.slug,
-        content: parsedContent,
-        excerpt: article.excerpt,
-        coverImage: article.coverImage,
-        type: article.type,
-        published: article.published,
+        title: article.title || "",
+        slug: article.slug || "",
+        content: article.content || { 
+          type: "doc", 
+          content: [{ type: "paragraph", content: [{ text: "" }] }] 
+        },
+        excerpt: article.excerpt || "",
+        coverImage: article.coverImage || "",
+        type: article.type || "review",
+        published: Boolean(article.published),
       });
 
       // Update UI state
