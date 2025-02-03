@@ -61,7 +61,7 @@ export default function EditArticlePage() {
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
 
   const { data: article, isLoading: isLoadingArticle } = useQuery({
-    queryKey: [`/api/articles/${params?.id}`],
+    queryKey: [`/api/articles/id/${params?.id}`],
     enabled: !!params?.id,
   });
 
