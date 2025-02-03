@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 export default function ArticlePage() {
   const [, params] = useRoute("/article/:slug");
+  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -20,6 +21,12 @@ export default function ArticlePage() {
   const { data: article } = useQuery<SelectArticle>({
     queryKey: [`/api/articles/${params?.slug}`],
   });
+
+  // If article is not found or not published (and user is not admin), redirect to home
+  if (!article || (!article.published && !user?.isAdmin)) {
+    setLocation("/");
+    return null;
+  }
 
   const bookmarkMutation = useMutation({
     mutationFn: async () => {
