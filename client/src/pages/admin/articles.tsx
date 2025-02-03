@@ -10,20 +10,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Edit2 } from "lucide-react";
 import { SelectArticle } from "@db/schema";
 import { useState } from "react";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ArticleEditor from "@/components/article/editor";
 
 export default function AdminArticles() {
   const { user } = useAuth();
   const { data: articles } = useQuery<SelectArticle[]>({
     queryKey: ["/api/articles"],
   });
+  const [editingArticle, setEditingArticle] = useState<SelectArticle | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!user?.isAdmin) {
     return <div>Access denied</div>;
   }
+
+  const handleEditArticle = (article: SelectArticle) => {
+    setEditingArticle(article);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingArticle(null);
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -37,6 +55,15 @@ export default function AdminArticles() {
         </Button>
       </div>
 
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>記事を編集</DialogTitle>
+          </DialogHeader>
+          <ArticleEditor article={editingArticle} onClose={handleCloseDialog} />
+        </DialogContent>
+      </Dialog>
+
       <div className="bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
@@ -45,6 +72,7 @@ export default function AdminArticles() {
               <TableHead>タイプ</TableHead>
               <TableHead>状態</TableHead>
               <TableHead>作成日</TableHead>
+              <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -65,6 +93,15 @@ export default function AdminArticles() {
                 </TableCell>
                 <TableCell>
                   {new Date(article.createdAt).toLocaleDateString()}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEditArticle(article)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
