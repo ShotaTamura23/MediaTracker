@@ -72,6 +72,7 @@ export default function EditArticlePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [editorContent, setEditorContent] = useState(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
 
@@ -89,7 +90,7 @@ export default function EditArticlePage() {
     defaultValues: {
       title: "",
       slug: "",
-      content: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "" }] }] },
+      content: null,
       excerpt: "",
       coverImage: "",
       type: "review",
@@ -106,6 +107,8 @@ export default function EditArticlePage() {
       const parsedContent = typeof article.content === 'string' 
         ? JSON.parse(article.content) 
         : article.content;
+
+      setEditorContent(parsedContent);
 
       // Reset form with all values
       form.reset({
@@ -130,12 +133,10 @@ export default function EditArticlePage() {
     mutationFn: async (values: FormValues) => {
       if (!params?.id) throw new Error("Article ID is required");
 
+      // Always use the latest editor content
       const articleData = {
         ...values,
-        // Ensure content is properly stringified if needed
-        content: typeof values.content === 'string' 
-          ? values.content 
-          : JSON.stringify(values.content),
+        content: JSON.stringify(editorContent),
         restaurants: selectedRestaurants,
       };
 
@@ -281,7 +282,7 @@ export default function EditArticlePage() {
                       )}
                     />
 
-                    <FormField
+                   <FormField
                       control={form.control}
                       name="content"
                       render={({ field }) => (
@@ -289,8 +290,11 @@ export default function EditArticlePage() {
                           <FormLabel>本文</FormLabel>
                           <FormControl>
                             <TipTapEditor
-                              content={field.value}
-                              onChange={field.onChange}
+                              content={editorContent}
+                              onChange={(newContent) => {
+                                setEditorContent(newContent);
+                                field.onChange(newContent);
+                              }}
                             />
                           </FormControl>
                           <FormMessage />

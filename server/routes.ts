@@ -105,35 +105,54 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/articles", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
 
-    const { restaurants: articleRestaurants, ...articleData } = req.body;
+    try {
+      const { restaurants: articleRestaurants, ...articleData } = req.body;
 
-    // Begin transaction
-    const article = await db.transaction(async (tx) => {
-      // Insert article
-      const [newArticle] = await tx.insert(articles)
-        .values({
-          ...articleData,
-          authorId: req.user.id,
-        })
-        .returning();
+      // Begin transaction
+      const article = await db.transaction(async (tx) => {
+        // Insert article
+        const [newArticle] = await tx.insert(articles)
+          .values({
+            ...articleData,
+            authorId: req.user.id,
+            content: typeof articleData.content === 'string'
+              ? articleData.content
+              : JSON.stringify(articleData.content),
+          })
+          .returning();
 
-      // Insert restaurant relations if any
-      if (articleRestaurants && articleRestaurants.length > 0) {
-        await tx.insert(article_restaurants)
-          .values(
-            articleRestaurants.map((r: any) => ({
-              articleId: newArticle.id,
-              restaurantId: r.id,
-              order: r.order,
-              description: r.description,
-            }))
-          );
+        // Insert restaurant relations if any
+        if (articleRestaurants && articleRestaurants.length > 0) {
+          await tx.insert(article_restaurants)
+            .values(
+              articleRestaurants.map((r: any) => ({
+                articleId: newArticle.id,
+                restaurantId: r.id,
+                order: r.order,
+                description: r.description,
+              }))
+            );
+        }
+
+        return newArticle;
+      });
+
+      res.status(201).json(article);
+    } catch (error: any) {
+      console.error('Error creating article:', error);
+
+      if (error.code === '23505') { // Unique constraint violation
+        res.status(400).json({
+          message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
+          code: 'DUPLICATE_SLUG'
+        });
+      } else {
+        res.status(500).json({
+          message: '記事の作成中にエラーが発生しました。',
+          error: error.message
+        });
       }
-
-      return newArticle;
-    });
-
-    res.status(201).json(article);
+    }
   });
 
   app.patch("/api/articles/:id", async (req, res) => {
@@ -182,14 +201,14 @@ export function registerRoutes(app: Express): Server {
       console.error('Error updating article:', error);
 
       if (error.code === '23505') { // Unique constraint violation
-        res.status(400).json({ 
+        res.status(400).json({
           message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
           code: 'DUPLICATE_SLUG'
         });
       } else {
-        res.status(500).json({ 
+        res.status(500).json({
           message: '記事の更新中にエラーが発生しました。',
-          error: error.message 
+          error: error.message
         });
       }
     }
