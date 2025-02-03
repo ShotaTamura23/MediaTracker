@@ -99,12 +99,19 @@ export default function EditArticlePage() {
       return res.json();
     },
     onSuccess: () => {
+      // First invalidate the queries
       queryClient.invalidateQueries({ queryKey: ["/api/articles"] });
+
+      // Show success toast
       toast({
         title: "記事を更新しました",
         description: "記事が正常に更新されました。",
       });
-      setLocation("/admin/articles");
+
+      // Navigate after a short delay to ensure toast is visible
+      setTimeout(() => {
+        setLocation("/admin/articles");
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
