@@ -37,6 +37,37 @@ export function registerRoutes(app: Express): Server {
     res.json(transformedArticles);
   });
 
+  // Get article by ID (新規追加)
+  app.get("/api/articles/id/:id", async (req, res) => {
+    const [article] = await db.query.articles.findMany({
+      where: eq(articles.id, parseInt(req.params.id)),
+      with: {
+        author: true,
+        restaurants: {
+          with: {
+            restaurant: true,
+          },
+        },
+      },
+    });
+
+    if (!article) return res.sendStatus(404);
+
+    // Transform the response
+    const transformedArticle = {
+      ...article,
+      restaurants: article.restaurants
+        .sort((a, b) => a.order - b.order)
+        .map(ar => ({
+          ...ar.restaurant,
+          description: ar.description,
+          order: ar.order,
+        })),
+    };
+
+    res.json(transformedArticle);
+  });
+
   app.get("/api/articles/:slug", async (req, res) => {
     const [article] = await db.query.articles.findMany({
       where: eq(articles.slug, req.params.slug),
