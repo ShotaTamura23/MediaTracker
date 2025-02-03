@@ -17,10 +17,11 @@ import {
 
 interface TipTapEditorProps {
   content: any;
-  onChange: (content: any) => void;
+  onChange?: (content: any) => void;
+  editable?: boolean;
 }
 
-export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
+export default function TipTapEditor({ content, onChange, editable = true }: TipTapEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -48,19 +49,31 @@ export default function TipTapEditor({ content, onChange }: TipTapEditorProps) {
       }),
     ],
     content,
+    editable,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose dark:prose-invert focus:outline-none',
       },
     },
     onUpdate: ({ editor }) => {
-      const json = editor.getJSON();
-      onChange(json);
+      if (onChange) {
+        const json = editor.getJSON();
+        onChange(json);
+      }
     },
   });
 
   if (!editor) {
     return null;
+  }
+
+  if (!editable) {
+    return (
+      <EditorContent 
+        editor={editor} 
+        className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none"
+      />
+    );
   }
 
   const addImage = () => {

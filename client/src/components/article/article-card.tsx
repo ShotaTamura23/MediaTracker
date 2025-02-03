@@ -9,6 +9,7 @@ import { SelectArticle } from "@db/schema";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import TipTapEditor from "@/components/editor/tiptap-editor";
 
 interface ArticleCardProps {
   article: SelectArticle & {
@@ -17,12 +18,14 @@ interface ArticleCardProps {
       cuisine_type: string;
       price_range: string;
       description?: string;
+      status?: string;
     }>;
   };
   isBookmarked?: boolean;
+  showContent?: boolean;
 }
 
-export default function ArticleCard({ article, isBookmarked }: ArticleCardProps) {
+export default function ArticleCard({ article, isBookmarked, showContent = false }: ArticleCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -94,6 +97,11 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
               {article.title}
             </h3>
             <p className="text-muted-foreground line-clamp-2 mb-3">{article.excerpt}</p>
+            {showContent && article.content && (
+              <div className="mb-4 prose prose-sm max-w-none">
+                <TipTapEditor content={article.content} editable={false} />
+              </div>
+            )}
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
@@ -106,7 +114,7 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
                 )}
               </div>
               <Badge className="capitalize">
-                {article.type === "review" ? "レビュー" : article.type === "list" ? "リスト" : "エッセイ"}
+                {article.type === "review" ? "レビュー" : "リスト"}
               </Badge>
             </div>
           </a>
