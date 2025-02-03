@@ -63,7 +63,7 @@ export default function ArticlePage() {
     : article.content;
 
   // For list-type articles, show restaurants with map
-  if (article.type === 'list') {
+  if (article.type === 'list' && article.restaurants) {
     return (
       <article className="min-h-screen bg-background">
         <header className="border-b bg-card">
@@ -95,39 +95,31 @@ export default function ArticlePage() {
         <main className="container mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-[1fr,400px] gap-8">
             <div className="space-y-6">
-              {content.content.map((block: any, index: number) => {
-                if (block.type === 'heading' && block.attrs?.level === 2) {
-                  const title = block.content[0].text;
-                  // Get the next paragraph block for description
-                  const nextBlock = content.content[index + 1];
-                  const description = nextBlock?.type === 'paragraph'
-                    ? nextBlock.content[0].text
-                    : '';
-
-                  return (
-                    <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow">
-                      <div className="p-6">
-                        <div className="flex items-start gap-4">
-                          <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center text-lg font-bold">
-                            {index / 2 + 1}
-                          </Badge>
-                          <div>
-                            <h2 className="text-2xl font-bold mb-2">{title}</h2>
-                            <p className="text-muted-foreground">{description}</p>
-                          </div>
+              {article.restaurants.map((restaurant, index) => (
+                <Card key={restaurant.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <Badge variant="outline" className="h-8 w-8 rounded-full flex items-center justify-center text-lg font-bold">
+                        {index + 1}
+                      </Badge>
+                      <div>
+                        <h2 className="text-2xl font-bold mb-2">{restaurant.name}</h2>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Badge>{restaurant.cuisine_type}</Badge>
+                          <Badge variant="outline">{restaurant.price_range}</Badge>
                         </div>
+                        <p className="text-muted-foreground">{restaurant.description}</p>
                       </div>
-                    </Card>
-                  );
-                }
-                return null;
-              })}
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
 
             <div className="lg:sticky lg:top-4 h-[calc(100vh-2rem)]">
               <Card className="h-full">
                 <div className="p-4 h-full">
-                  <RestaurantMap />
+                  <RestaurantMap restaurants={article.restaurants} />
                 </div>
               </Card>
             </div>
@@ -182,6 +174,23 @@ export default function ArticlePage() {
               </Button>
             </div>
 
+            {/* レストラン情報（レビュー記事の場合） */}
+            {article.type === 'review' && article.restaurants && article.restaurants[0] && (
+              <Card className="mb-8 p-6">
+                <h2 className="text-2xl font-bold mb-4">レビュー対象店舗</h2>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">{article.restaurants[0].name}</h3>
+                  <div className="flex items-center gap-2">
+                    <Badge>{article.restaurants[0].cuisine_type}</Badge>
+                    <Badge variant="outline">{article.restaurants[0].price_range}</Badge>
+                  </div>
+                  {article.restaurants[0].description && (
+                    <p className="text-muted-foreground mt-2">{article.restaurants[0].description}</p>
+                  )}
+                </div>
+              </Card>
+            )}
+
             <div className="prose prose-lg max-w-none">
               {content.content.map((block: any, index: number) => {
                 if (block.type === 'paragraph') {
@@ -215,7 +224,7 @@ export default function ArticlePage() {
           <div className="lg:sticky lg:top-4 h-[calc(100vh-2rem)]">
             <Card className="h-full">
               <div className="p-4 h-full">
-                <RestaurantMap />
+                <RestaurantMap restaurants={article.restaurants} />
               </div>
             </Card>
           </div>
