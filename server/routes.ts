@@ -29,20 +29,33 @@ export function registerRoutes(app: Express): Server {
   // Admin-only routes for article management
   app.post("/api/articles", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+
+    const { restaurants, ...articleData } = req.body;
     const article = await db.insert(articles).values({
-      ...req.body,
+      ...articleData,
       authorId: req.user.id,
     }).returning();
+
+    // TODO: Add restaurants relation handling here
+    // This will be implemented when the database schema is updated to support article-restaurant relations
+
     res.status(201).json(article[0]);
   });
 
   app.patch("/api/articles/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
+
+    const { restaurants, ...articleData } = req.body;
     const [article] = await db.update(articles)
-      .set(req.body)
+      .set(articleData)
       .where(eq(articles.id, parseInt(req.params.id)))
       .returning();
+
     if (!article) return res.sendStatus(404);
+
+    // TODO: Update restaurants relation here
+    // This will be implemented when the database schema is updated to support article-restaurant relations
+
     res.json(article);
   });
 
