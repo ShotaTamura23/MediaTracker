@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation, useRoute } from "wouter";
@@ -61,6 +61,7 @@ export default function EditArticlePage() {
 
   const { data: article, isLoading: isLoadingArticle } = useQuery({
     queryKey: [`/api/articles/${params?.id}`],
+    enabled: !!params?.id,
   });
 
   const { data: restaurants } = useQuery<SelectRestaurant[]>({
@@ -69,7 +70,7 @@ export default function EditArticlePage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(editArticleSchema),
-    defaultValues: {
+    values: {
       title: article?.title || "",
       slug: article?.slug || "",
       content: article?.content ? 
@@ -81,6 +82,13 @@ export default function EditArticlePage() {
       published: article?.published || false,
     },
   });
+
+  // Set selected restaurants when article data is loaded
+  useEffect(() => {
+    if (article?.restaurants) {
+      setSelectedRestaurants(article.restaurants);
+    }
+  }, [article]);
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
