@@ -72,6 +72,7 @@ export default function EditArticlePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+    // Initial state for editor content
   const [editorContent, setEditorContent] = useState(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
@@ -98,7 +99,7 @@ export default function EditArticlePage() {
     }
   });
 
-  // Update form values when article data is loaded
+    // Update form values when article data is loaded
   useEffect(() => {
     if (article) {
       console.log('Loading article data:', article);
@@ -108,6 +109,7 @@ export default function EditArticlePage() {
         ? JSON.parse(article.content) 
         : article.content;
 
+      console.log('Parsed content:', parsedContent);
       setEditorContent(parsedContent);
 
       // Reset form with all values
@@ -128,6 +130,7 @@ export default function EditArticlePage() {
       }
     }
   }, [article, form]);
+
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -292,6 +295,7 @@ export default function EditArticlePage() {
                             <TipTapEditor
                               content={editorContent}
                               onChange={(newContent) => {
+                                console.log('Editor content updated:', newContent);
                                 setEditorContent(newContent);
                                 field.onChange(newContent);
                               }}

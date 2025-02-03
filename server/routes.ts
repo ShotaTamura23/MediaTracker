@@ -68,6 +68,9 @@ export function registerRoutes(app: Express): Server {
         })),
     };
 
+    // Log the transformed content for debugging
+    console.log('Transformed article content:', transformedArticle.content);
+
     res.json(transformedArticle);
   });
 
