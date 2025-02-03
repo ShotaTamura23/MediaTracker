@@ -190,29 +190,24 @@ export default function ArticlePage() {
 
   // For essay and review type articles
   return (
-    <article className="min-h-screen">
-      <div className="relative h-[70vh] min-h-[600px]">
-        <div className="absolute inset-0">
-          <img
-            src={article.coverImage}
-            alt={article.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-background/20" />
-        </div>
-        <div className="absolute inset-0 flex items-end">
-          <div className="container mx-auto px-4 pb-16">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white">
-                {article.title}
-              </h1>
-              <p className="text-xl text-white/90">
-                {article.excerpt}
-              </p>
-            </div>
+    <article className="min-h-screen bg-background">
+      <header className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            {article.title}
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8">
+            {article.excerpt}
+          </p>
+          <div className="relative aspect-[16/9] overflow-hidden rounded-lg">
+            <img
+              src={article.coverImage}
+              alt={article.title}
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
-      </div>
+      </header>
 
       <main className="container mx-auto px-4">
         <div className="grid lg:grid-cols-[1fr,400px] gap-8">
