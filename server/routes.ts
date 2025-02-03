@@ -68,8 +68,7 @@ export function registerRoutes(app: Express): Server {
     };
 
     // Log the transformed content for debugging
-    console.log('Transformed article content:', transformedArticle.content);
-
+    console.log('Retrieved article with content:', transformedArticle.content);
     res.json(transformedArticle);
   });
 
@@ -135,13 +134,18 @@ export function registerRoutes(app: Express): Server {
 
     try {
       const article = await db.transaction(async (tx) => {
+        // Always stringify the content before saving
+        const contentToSave = typeof articleData.content === 'string'
+          ? articleData.content
+          : JSON.stringify(articleData.content);
+
+        console.log('Saving article content:', contentToSave);
+
         // Update article
         const [updatedArticle] = await tx.update(articles)
           .set({
             ...articleData,
-            content: typeof articleData.content === 'string'
-              ? articleData.content
-              : JSON.stringify(articleData.content),
+            content: contentToSave,
             updatedAt: new Date(),
           })
           .where(eq(articles.id, articleId))
@@ -168,7 +172,6 @@ export function registerRoutes(app: Express): Server {
             );
         }
 
-        console.log('Updated article with content:', updatedArticle.content);
         return updatedArticle;
       });
 
