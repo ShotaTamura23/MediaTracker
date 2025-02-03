@@ -7,7 +7,7 @@ import { ExternalLink, MapPin, Phone } from "lucide-react";
 
 export default function RestaurantsPage() {
   const { data: restaurants, isLoading } = useQuery<SelectRestaurant[]>({
-    queryKey: ["/api/restaurants"],
+    queryKey: ["/api/restaurants/published"],
   });
 
   return (
@@ -67,7 +67,7 @@ export default function RestaurantsPage() {
         <div className="lg:sticky lg:top-4 h-[calc(100vh-2rem)]">
           <Card className="h-full">
             <CardContent className="p-4 h-full">
-              <RestaurantMap />
+              <RestaurantMap publishedOnly={true} />
             </CardContent>
           </Card>
         </div>

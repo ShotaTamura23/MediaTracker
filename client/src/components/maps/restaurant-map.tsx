@@ -5,11 +5,15 @@ import { SelectRestaurant } from "@db/schema";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
-export default function RestaurantMap() {
+interface RestaurantMapProps {
+  publishedOnly?: boolean;
+}
+
+export default function RestaurantMap({ publishedOnly = false }: RestaurantMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const { data: restaurants } = useQuery<SelectRestaurant[]>({
-    queryKey: ["/api/restaurants"],
+    queryKey: [publishedOnly ? "/api/restaurants/published" : "/api/restaurants"],
   });
 
   useEffect(() => {

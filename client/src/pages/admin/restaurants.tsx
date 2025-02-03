@@ -69,6 +69,7 @@ export default function AdminRestaurants() {
     lat: number;
     lng: number;
   } | null>(null);
+  const [editingRestaurant, setEditingRestaurant] = useState<SelectRestaurant | null>(null);
 
   const { data: restaurants, refetch } = useQuery<SelectRestaurant[]>({
     queryKey: ["/api/restaurants"],
@@ -115,6 +116,31 @@ export default function AdminRestaurants() {
     },
   });
 
+  const updateRestaurantMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const res = await apiRequest("PATCH", `/api/restaurants/${id}`, data);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "レストランの更新に失敗しました");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "レストラン情報を更新しました",
+      });
+      setEditingRestaurant(null);
+      refetch();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "レストランの更新に失敗しました",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateRestaurantStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const res = await apiRequest("PATCH", `/api/restaurants/${id}/status`, { status });
@@ -152,11 +178,42 @@ export default function AdminRestaurants() {
     });
   };
 
+  const handleEditRestaurant = (restaurant: SelectRestaurant) => {
+    setEditingRestaurant(restaurant);
+    form.reset({
+      name: restaurant.name,
+      description: restaurant.description,
+      address: restaurant.address,
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude,
+      cuisine_type: restaurant.cuisine_type,
+      price_range: restaurant.price_range,
+      status: restaurant.status,
+      website: restaurant.website || "",
+      phone: restaurant.phone || "",
+    });
+    setSelectedLocation({
+      lat: parseFloat(restaurant.latitude),
+      lng: parseFloat(restaurant.longitude),
+    });
+  };
+
+  const handleSubmit = (data: any) => {
+    if (editingRestaurant) {
+      updateRestaurantMutation.mutate({
+        id: editingRestaurant.id,
+        data,
+      });
+    } else {
+      createRestaurantMutation.mutate(data);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">レストラン管理</h1>
-        <Dialog>
+        <Dialog onOpenChange={(open) => !open && setEditingRestaurant(null)}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="h-4 w-4 mr-2" />
@@ -165,13 +222,13 @@ export default function AdminRestaurants() {
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>レストラン登録</DialogTitle>
+              <DialogTitle>
+                {editingRestaurant ? "レストラン情報編集" : "レストラン登録"}
+              </DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form
-                onSubmit={form.handleSubmit((data) =>
-                  createRestaurantMutation.mutate(data)
-                )}
+                onSubmit={form.handleSubmit(handleSubmit)}
                 className="space-y-6"
               >
                 <FormField
@@ -328,7 +385,9 @@ export default function AdminRestaurants() {
                 </div>
 
                 <div className="flex justify-end gap-4">
-                  <Button type="submit">登録</Button>
+                  <Button type="submit">
+                    {editingRestaurant ? "更新" : "登録"}
+                  </Button>
                 </div>
               </form>
             </Form>
@@ -371,6 +430,12 @@ export default function AdminRestaurants() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => handleEditRestaurant(restaurant)}
+                      >
+                        編集する
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() =>
                           handleStatusChange(restaurant.id, "published")
