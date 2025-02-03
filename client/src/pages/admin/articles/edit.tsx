@@ -103,39 +103,32 @@ export default function EditArticlePage() {
 
   useEffect(() => {
     if (article) {
-      console.log('Article loaded:', article);
-      console.log('Original content:', article.content);
+      let contentToSet: any;
 
-      let contentToSet = article.content;
-
-      if (typeof contentToSet === 'string') {
+      if (typeof article.content === 'string') {
         try {
-          contentToSet = JSON.parse(contentToSet);
-          console.log('Parsed content:', contentToSet);
+          contentToSet = JSON.parse(article.content);
         } catch (e) {
-          console.error('Failed to parse article content:', e);
           contentToSet = {
             type: "doc",
             content: [
               {
                 type: "paragraph",
-                content: [{ type: "text", text: String(contentToSet) }]
+                content: [{ type: "text", text: article.content }]
               }
             ]
           };
-          console.log('Created fallback content:', contentToSet);
         }
+      } else {
+        contentToSet = article.content;
       }
 
-      if (!contentToSet || typeof contentToSet !== 'object' || !contentToSet.type) {
+      if (!contentToSet || typeof contentToSet !== 'object') {
         contentToSet = {
           type: "doc",
           content: []
         };
-        console.log('Created empty document structure:', contentToSet);
       }
-
-      console.log('Final editor content to set:', contentToSet);
 
       setEditorContent(contentToSet);
 
@@ -187,7 +180,6 @@ export default function EditArticlePage() {
       }, 500);
     },
     onError: (error: Error) => {
-      console.error('Mutation error:', error);
       toast({
         title: "記事の更新に失敗しました",
         description: error.message,
@@ -197,9 +189,8 @@ export default function EditArticlePage() {
   });
 
   const handleEditorUpdate = (newContent: any) => {
-    console.log('Editor content updated:', newContent);
     setEditorContent(newContent);
-    form.setValue('content', newContent, { 
+    form.setValue('content', newContent, {
       shouldDirty: true,
       shouldTouch: true,
       shouldValidate: true
