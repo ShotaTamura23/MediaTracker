@@ -11,6 +11,7 @@ import HomePage from "./pages/home-page";
 import ArticlePage from "./pages/article-page";
 import ReviewsPage from "./pages/articles/reviews";
 import GuidesPage from "./pages/articles/guides";
+import OpeningsPage from "./pages/articles/openings";
 import RestaurantsPage from "./pages/restaurants";
 import AuthPage from "./pages/auth-page";
 import AdminDashboard from "./pages/admin/dashboard";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/article/:slug" component={ArticlePage} />
       <Route path="/articles/reviews" component={ReviewsPage} />
       <Route path="/articles/guides" component={GuidesPage} />
+      <Route path="/articles/openings" component={OpeningsPage} />
       <Route path="/restaurants" component={RestaurantsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/admin/login" component={AdminLoginPage} />

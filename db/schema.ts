@@ -22,6 +22,7 @@ export const articles = pgTable("articles", {
   authorId: integer("author_id").references(() => users.id).notNull(),
   published: boolean("published").default(false).notNull(),
   type: text("type", { enum: ["review", "list"] }).notNull(),
+  isNewOpening: boolean("is_new_opening").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });

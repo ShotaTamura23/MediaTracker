@@ -16,6 +16,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -31,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, MapPin, Plus, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +46,7 @@ const createArticleSchema = insertArticleSchema.omit({
   authorId: true,
   createdAt: true,
   updatedAt: true,
+  slug: true,
 });
 
 const defaultEditorContent = {
@@ -76,12 +79,12 @@ export default function CreateArticlePage() {
     resolver: zodResolver(createArticleSchema),
     defaultValues: {
       title: "",
-      slug: "",
       content: defaultEditorContent,
       excerpt: "",
       coverImage: "",
       type: "review",
       published: false,
+      isNewOpening: false,
     },
   });
 
@@ -133,10 +136,8 @@ export default function CreateArticlePage() {
   const handleAddRestaurant = (restaurant: SelectRestaurant) => {
     const articleType = form.watch("type");
     if (articleType === "review" && selectedRestaurants.length > 0) {
-      // レビュー記事の場合は1つのレストランのみ
       setSelectedRestaurants([{ ...restaurant, order: 0, description: "" }]);
     } else {
-      // リスト記事の場合は複数のレストランを追加可能
       setSelectedRestaurants([
         ...selectedRestaurants,
         { ...restaurant, order: selectedRestaurants.length, description: "" },
@@ -197,20 +198,6 @@ export default function CreateArticlePage() {
 
                   <FormField
                     control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>スラッグ</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
                     name="content"
                     render={({ field }) => (
                       <FormItem>
@@ -249,8 +236,10 @@ export default function CreateArticlePage() {
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            // タイプが変更された場合、選択されたレストランをリセット
                             setSelectedRestaurants([]);
+                            if (value !== "review") {
+                              form.setValue("isNewOpening", false);
+                            }
                           }}
                           defaultValue={field.value}
                         >
@@ -268,6 +257,29 @@ export default function CreateArticlePage() {
                       </FormItem>
                     )}
                   />
+
+                  {articleType === "review" && (
+                    <FormField
+                      control={form.control}
+                      name="isNewOpening"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>新着店舗リストに表示</FormLabel>
+                            <FormDescription>
+                              このチェックを入れると、新着店舗一覧ページに表示されます。
+                            </FormDescription>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
