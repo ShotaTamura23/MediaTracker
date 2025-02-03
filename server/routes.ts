@@ -56,6 +56,9 @@ export function registerRoutes(app: Express): Server {
     // Transform the response
     const transformedArticle = {
       ...article,
+      content: typeof article.content === 'string'
+        ? JSON.parse(article.content)
+        : article.content,
       restaurants: article.restaurants
         .sort((a, b) => a.order - b.order)
         .map(ar => ({
