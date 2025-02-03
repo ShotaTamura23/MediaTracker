@@ -28,17 +28,22 @@ export default function Navbar() {
           <NavigationMenuList>
             <NavigationMenuItem>
               <Button variant="ghost" asChild>
-                <Link href="/articles/reviews">Reviews</Link>
+                <Link href="/articles/reviews">レビュー</Link>
               </Button>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <Button variant="ghost" asChild>
-                <Link href="/articles/guides">Guides</Link>
+                <Link href="/articles/guides">ガイド</Link>
               </Button>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <Button variant="ghost" asChild>
-                <Link href="/restaurants">Restaurants</Link>
+                <Link href="/articles/openings">新着店舗</Link>
+              </Button>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Button variant="ghost" asChild>
+                <Link href="/restaurants">レストラン</Link>
               </Button>
             </NavigationMenuItem>
           </NavigationMenuList>
@@ -55,20 +60,20 @@ export default function Navbar() {
               <DropdownMenuContent align="end">
                 {user.isAdmin && (
                   <DropdownMenuItem asChild>
-                    <Link href="/admin">Admin Dashboard</Link>
+                    <Link href="/admin">管理画面</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
-                  <Link href="/bookmarks">My Bookmarks</Link>
+                  <Link href="/bookmarks">ブックマーク</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
-                  Logout
+                  ログアウト
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button asChild variant="default">
-              <Link href="/auth">Sign In</Link>
+              <Link href="/auth">ログイン</Link>
             </Button>
           )}
         </div>

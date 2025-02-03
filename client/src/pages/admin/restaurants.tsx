@@ -50,6 +50,7 @@ import RestaurantLocationPicker from "@/components/maps/restaurant-location-pick
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { Loader } from "@googlemaps/js-api-loader";
 
 const statusColors = {
   published: "bg-green-100 text-green-800",
@@ -173,10 +174,47 @@ export default function AdminRestaurants() {
     },
   });
 
-  const handleLocationSelect = (lat: number, lng: number) => {
+  const handleLocationSelect = async (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng });
     form.setValue("latitude", lat.toString());
     form.setValue("longitude", lng.toString());
+
+    // Reverse geocoding to get address
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      toast({
+        title: "Error",
+        description: "Google Maps API Key is not configured",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const loader = new Loader({
+        apiKey,
+        version: "weekly",
+      });
+
+      const google = await loader.load();
+      const geocoder = new google.maps.Geocoder();
+
+      const response = await geocoder.geocode({
+        location: { lat, lng }
+      });
+
+      if (response.results[0]) {
+        const address = response.results[0].formatted_address;
+        form.setValue("address", address);
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      toast({
+        title: "住所の取得に失敗しました",
+        description: "地図上の位置から住所を取得できませんでした",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleStatusChange = (restaurantId: number, newStatus: string) => {
