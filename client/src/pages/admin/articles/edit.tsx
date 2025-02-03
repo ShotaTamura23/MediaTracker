@@ -104,11 +104,28 @@ export default function EditArticlePage() {
   // Initialize form and editor when article data is loaded
   useEffect(() => {
     if (article) {
-      console.log('Loading article data:', article);
-      console.log('Article content:', article.content);
-
       // Ensure content has the correct structure
       let contentToSet = article.content;
+
+      // If content is a string (JSON), parse it
+      if (typeof contentToSet === 'string') {
+        try {
+          contentToSet = JSON.parse(contentToSet);
+        } catch (e) {
+          console.error('Failed to parse article content:', e);
+          contentToSet = {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: contentToSet }]
+              }
+            ]
+          };
+        }
+      }
+
+      // If content is still not in the correct format, create a default structure
       if (!contentToSet || typeof contentToSet !== 'object' || !contentToSet.type) {
         contentToSet = {
           type: "doc",
@@ -116,14 +133,14 @@ export default function EditArticlePage() {
         };
       }
 
-      console.log('Setting editor content:', contentToSet);
+      // Set editor content
       setEditorContent(contentToSet);
 
       // Reset form with all values
       form.reset({
         title: article.title,
         slug: article.slug,
-        content: contentToSet, // Set initial content
+        content: contentToSet,
         excerpt: article.excerpt,
         coverImage: article.coverImage,
         type: article.type,
@@ -145,12 +162,9 @@ export default function EditArticlePage() {
       // Ensure we're sending the latest editor content
       const formData = {
         ...values,
-        content: editorContent, // Use the current editor content
+        content: editorContent,
         restaurants: selectedRestaurants,
       };
-
-      console.log('Submitting article update:', formData);
-      console.log('Editor content structure:', editorContent);
 
       const res = await apiRequest("PATCH", `/api/articles/${params.id}`, formData);
       if (!res.ok) {
@@ -184,7 +198,6 @@ export default function EditArticlePage() {
 
   // Editor content update handler with proper form synchronization
   const handleEditorUpdate = (newContent: any) => {
-    console.log('Editor content updated:', newContent);
     setEditorContent(newContent);
     form.setValue('content', newContent, { 
       shouldDirty: true,
@@ -192,7 +205,6 @@ export default function EditArticlePage() {
       shouldValidate: true
     });
   };
-
 
   if (isLoadingArticle) {
     return (
@@ -257,9 +269,6 @@ export default function EditArticlePage() {
 
   // Form submission handler
   const onSubmit = async (values: FormValues) => {
-    console.log('Form values before submit:', values);
-    console.log('Current editor content:', editorContent);
-
     if (!editorContent) {
       toast({
         title: "エラー",
@@ -269,13 +278,7 @@ export default function EditArticlePage() {
       return;
     }
 
-    const formData = {
-      ...values,
-      content: editorContent,
-    };
-
-    console.log('Final form data to submit:', formData);
-    mutation.mutate(formData);
+    mutation.mutate(values);
   };
 
   const articleType = form.watch('type');
@@ -338,6 +341,7 @@ export default function EditArticlePage() {
                             <TipTapEditor
                               content={editorContent}
                               onChange={handleEditorUpdate}
+                              editable={true}
                             />
                           </FormControl>
                           <FormMessage />
