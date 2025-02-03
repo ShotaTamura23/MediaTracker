@@ -48,6 +48,7 @@ import { Badge } from "@/components/ui/badge";
 import RestaurantLocationPicker from "@/components/maps/restaurant-location-picker";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 const statusColors = {
   published: "bg-green-100 text-green-800",
@@ -65,6 +66,7 @@ const statusLabels = {
 
 export default function AdminRestaurants() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedLocation, setSelectedLocation] = useState<{
     lat: number;
     lng: number;
@@ -104,8 +106,10 @@ export default function AdminRestaurants() {
     onSuccess: () => {
       toast({
         title: "レストランを登録しました",
+        description: "新しいレストランが正常に登録されました。",
       });
       form.reset();
+      setDialogOpen(false);
       refetch();
     },
     onError: (error: Error) => {
@@ -129,8 +133,10 @@ export default function AdminRestaurants() {
     onSuccess: () => {
       toast({
         title: "レストラン情報を更新しました",
+        description: "レストラン情報が正常に更新されました。",
       });
       setEditingRestaurant(null);
+      setDialogOpen(false);
       refetch();
     },
     onError: (error: Error) => {
