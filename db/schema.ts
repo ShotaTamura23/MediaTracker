@@ -21,7 +21,7 @@ export const articles = pgTable("articles", {
   coverImage: text("cover_image").notNull(),
   authorId: integer("author_id").references(() => users.id).notNull(),
   published: boolean("published").default(false).notNull(),
-  type: text("type", { enum: ["review", "list", "essay"] }).notNull(),
+  type: text("type", { enum: ["review", "list"] }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
@@ -33,8 +33,23 @@ export const restaurants = pgTable("restaurants", {
   address: text("address").notNull(),
   latitude: text("latitude").notNull(),
   longitude: text("longitude").notNull(),
+  cuisine_type: text("cuisine_type", { 
+    enum: ["washoku", "sushi", "ramen", "izakaya", "other"] 
+  }).notNull(),
+  price_range: text("price_range", { 
+    enum: ["budget", "moderate", "expensive", "luxury"] 
+  }).notNull(),
   website: text("website"),
   phone: text("phone"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const article_restaurants = pgTable("article_restaurants", {
+  id: serial("id").primaryKey(),
+  articleId: integer("article_id").references(() => articles.id).notNull(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  order: integer("order").default(0).notNull(), // リスト記事での表示順
+  description: text("description"), // リスト記事での個別コメント
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -53,10 +68,26 @@ export const newsletters = pgTable("newsletters", {
 });
 
 // Relations
-export const articlesRelations = relations(articles, ({ one }) => ({
+export const articlesRelations = relations(articles, ({ one, many }) => ({
   author: one(users, {
     fields: [articles.authorId],
     references: [users.id],
+  }),
+  restaurants: many(article_restaurants),
+}));
+
+export const restaurantsRelations = relations(restaurants, ({ many }) => ({
+  articles: many(article_restaurants),
+}));
+
+export const articleRestaurantsRelations = relations(article_restaurants, ({ one }) => ({
+  article: one(articles, {
+    fields: [article_restaurants.articleId],
+    references: [articles.id],
+  }),
+  restaurant: one(restaurants, {
+    fields: [article_restaurants.restaurantId],
+    references: [restaurants.id],
   }),
 }));
 
@@ -81,6 +112,9 @@ export const selectArticleSchema = createSelectSchema(articles);
 export const insertRestaurantSchema = createInsertSchema(restaurants);
 export const selectRestaurantSchema = createSelectSchema(restaurants);
 
+export const insertArticleRestaurantSchema = createInsertSchema(article_restaurants);
+export const selectArticleRestaurantSchema = createSelectSchema(article_restaurants);
+
 export const insertBookmarkSchema = createInsertSchema(bookmarks);
 export const selectBookmarkSchema = createSelectSchema(bookmarks);
 
@@ -94,6 +128,8 @@ export type InsertArticle = typeof articles.$inferInsert;
 export type SelectArticle = typeof articles.$inferSelect;
 export type InsertRestaurant = typeof restaurants.$inferInsert;
 export type SelectRestaurant = typeof restaurants.$inferSelect;
+export type InsertArticleRestaurant = typeof article_restaurants.$inferInsert;
+export type SelectArticleRestaurant = typeof article_restaurants.$inferSelect;
 export type InsertBookmark = typeof bookmarks.$inferInsert;
 export type SelectBookmark = typeof bookmarks.$inferSelect;
 export type InsertNewsletter = typeof newsletters.$inferInsert;
