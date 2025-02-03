@@ -142,49 +142,58 @@ export function registerRoutes(app: Express): Server {
     const { restaurants: articleRestaurants, ...articleData } = req.body;
     const articleId = parseInt(req.params.id);
 
-    // Add logging to debug the update
-    console.log('Updating article:', articleId);
-    console.log('Article data:', articleData);
+    try {
+      const article = await db.transaction(async (tx) => {
+        // Update article
+        const [updatedArticle] = await tx.update(articles)
+          .set({
+            ...articleData,
+            updatedAt: new Date(),
+          })
+          .where(eq(articles.id, articleId))
+          .returning();
 
-    const article = await db.transaction(async (tx) => {
-      // Update article
-      const [updatedArticle] = await tx.update(articles)
-        .set({
-          ...articleData,
-          updatedAt: new Date(), // 更新日時を明示的に設定
-        })
-        .where(eq(articles.id, articleId))
-        .returning();
+        if (!updatedArticle) {
+          throw new Error('Article not found');
+        }
 
-      if (!updatedArticle) return null;
+        // Delete existing restaurant relations
+        await tx.delete(article_restaurants)
+          .where(eq(article_restaurants.articleId, articleId));
 
-      // Delete existing restaurant relations
-      await tx.delete(article_restaurants)
-        .where(eq(article_restaurants.articleId, articleId));
+        // Insert new restaurant relations if any
+        if (articleRestaurants && articleRestaurants.length > 0) {
+          await tx.insert(article_restaurants)
+            .values(
+              articleRestaurants.map((r: any) => ({
+                articleId: updatedArticle.id,
+                restaurantId: r.id,
+                order: r.order,
+                description: r.description,
+              }))
+            );
+        }
 
-      // Insert new restaurant relations if any
-      if (articleRestaurants && articleRestaurants.length > 0) {
-        await tx.insert(article_restaurants)
-          .values(
-            articleRestaurants.map((r: any) => ({
-              articleId: updatedArticle.id,
-              restaurantId: r.id,
-              order: r.order,
-              description: r.description,
-            }))
-          );
+        return updatedArticle;
+      });
+
+      res.json(article);
+    } catch (error: any) {
+      console.error('Error updating article:', error);
+
+      if (error.code === '23505') { // Unique constraint violation
+        res.status(400).json({ 
+          message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
+          code: 'DUPLICATE_SLUG'
+        });
+      } else {
+        res.status(500).json({ 
+          message: '記事の更新中にエラーが発生しました。',
+          error: error.message 
+        });
       }
-
-      return updatedArticle;
-    });
-
-    if (!article) return res.sendStatus(404);
-
-    // Add logging to debug the response
-    console.log('Updated article:', article);
-    res.json(article);
+    }
   });
-
 
   app.delete("/api/articles/:id", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
