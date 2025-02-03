@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation, useRoute } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { insertArticleSchema, type InsertArticle, type SelectRestaurant } from "@db/schema";
+import { type InsertArticle, type SelectRestaurant } from "@db/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -31,6 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, MapPin, Plus, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -70,25 +71,41 @@ export default function EditArticlePage() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(editArticleSchema),
-    values: {
-      title: article?.title || "",
-      slug: article?.slug || "",
-      content: article?.content ? 
-        (typeof article.content === 'string' ? JSON.parse(article.content) : article.content) : 
-        { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] },
-      excerpt: article?.excerpt || "",
-      coverImage: article?.coverImage || "",
-      type: article?.type || "review",
-      published: article?.published || false,
-    },
+    defaultValues: {
+      title: "",
+      slug: "",
+      content: { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] },
+      excerpt: "",
+      coverImage: "",
+      type: "review",
+      published: false,
+    }
   });
 
-  // Set selected restaurants when article data is loaded
+  // Update form values when article data is loaded
   useEffect(() => {
-    if (article?.restaurants) {
-      setSelectedRestaurants(article.restaurants);
+    if (article) {
+      form.reset({
+        title: article.title,
+        slug: article.slug,
+        content: article.content ? 
+          (typeof article.content === 'string' ? JSON.parse(article.content) : article.content) : 
+          { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] },
+        excerpt: article.excerpt,
+        coverImage: article.coverImage,
+        type: article.type,
+        published: article.published,
+      });
+
+      if (article.coverImage) {
+        setPreviewImage(article.coverImage);
+      }
+
+      if (article.restaurants) {
+        setSelectedRestaurants(article.restaurants);
+      }
     }
-  }, [article]);
+  }, [article, form]);
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -138,7 +155,7 @@ export default function EditArticlePage() {
     );
   }
 
-    const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -294,6 +311,27 @@ export default function EditArticlePage() {
                           </SelectContent>
                         </Select>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="published"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">公開ステータス</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            この記事を公開するかどうかを設定します
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
                       </FormItem>
                     )}
                   />
