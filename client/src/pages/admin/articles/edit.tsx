@@ -99,38 +99,6 @@ export default function EditArticlePage() {
     }
   });
 
-    // Update form values when article data is loaded
-  useEffect(() => {
-    if (article) {
-      console.log('Loading article data:', article);
-
-      // Parse content if it's a string
-      const parsedContent = typeof article.content === 'string' 
-        ? JSON.parse(article.content) 
-        : article.content;
-
-      console.log('Parsed content:', parsedContent);
-      setEditorContent(parsedContent);
-
-      // Reset form with all values
-      form.reset({
-        title: article.title,
-        slug: article.slug,
-        content: parsedContent,
-        excerpt: article.excerpt,
-        coverImage: article.coverImage,
-        type: article.type,
-        published: article.published,
-      });
-
-      // Update UI state
-      setPreviewImage(article.coverImage);
-      if (article.restaurants) {
-        setSelectedRestaurants(article.restaurants);
-      }
-    }
-  }, [article, form]);
-
 
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -142,6 +110,8 @@ export default function EditArticlePage() {
         content: editorContent,
         restaurants: selectedRestaurants,
       };
+
+      console.log('Sending article data:', articleData);
 
       const res = await apiRequest("PATCH", `/api/articles/${params.id}`, articleData);
       if (!res.ok) {
@@ -173,6 +143,38 @@ export default function EditArticlePage() {
       });
     },
   });
+
+  // Update form values when article data is loaded
+  useEffect(() => {
+    if (article) {
+      console.log('Loading article data:', article);
+
+      // Parse content if it's a string
+      const parsedContent = typeof article.content === 'string' 
+        ? JSON.parse(article.content) 
+        : article.content;
+
+      console.log('Parsed content:', parsedContent);
+      setEditorContent(parsedContent);
+
+      // Reset form with all values
+      form.reset({
+        title: article.title,
+        slug: article.slug,
+        content: parsedContent,
+        excerpt: article.excerpt,
+        coverImage: article.coverImage,
+        type: article.type,
+        published: article.published,
+      });
+
+      // Update UI state
+      setPreviewImage(article.coverImage);
+      if (article.restaurants) {
+        setSelectedRestaurants(article.restaurants);
+      }
+    }
+  }, [article, form]);
 
   if (isLoadingArticle) {
     return (

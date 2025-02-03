@@ -73,37 +73,6 @@ export function registerRoutes(app: Express): Server {
     res.json(transformedArticle);
   });
 
-  app.get("/api/articles/:slug", async (req, res) => {
-    const [article] = await db.query.articles.findMany({
-      where: eq(articles.slug, req.params.slug),
-      with: {
-        author: true,
-        restaurants: {
-          with: {
-            restaurant: true,
-          },
-        },
-      },
-    });
-
-    if (!article) return res.sendStatus(404);
-
-    // Transform the response
-    const transformedArticle = {
-      ...article,
-      restaurants: article.restaurants
-        .sort((a, b) => a.order - b.order)
-        .map(ar => ({
-          ...ar.restaurant,
-          description: ar.description,
-          order: ar.order,
-        })),
-    };
-
-    res.json(transformedArticle);
-  });
-
-  // Admin-only routes for article management
   app.post("/api/articles", async (req, res) => {
     if (!req.isAuthenticated() || !req.user.isAdmin) return res.sendStatus(403);
 
@@ -139,11 +108,12 @@ export function registerRoutes(app: Express): Server {
         return newArticle;
       });
 
+      console.log('Created article with content:', article.content);
       res.status(201).json(article);
     } catch (error: any) {
       console.error('Error creating article:', error);
 
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
         res.status(400).json({
           message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
           code: 'DUPLICATE_SLUG'
@@ -169,6 +139,9 @@ export function registerRoutes(app: Express): Server {
         const [updatedArticle] = await tx.update(articles)
           .set({
             ...articleData,
+            content: typeof articleData.content === 'string'
+              ? articleData.content
+              : JSON.stringify(articleData.content),
             updatedAt: new Date(),
           })
           .where(eq(articles.id, articleId))
@@ -195,6 +168,7 @@ export function registerRoutes(app: Express): Server {
             );
         }
 
+        console.log('Updated article with content:', updatedArticle.content);
         return updatedArticle;
       });
 
@@ -202,7 +176,7 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error('Error updating article:', error);
 
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
         res.status(400).json({
           message: 'このスラッグは既に使用されています。別のスラッグを指定してください。',
           code: 'DUPLICATE_SLUG'
@@ -214,6 +188,40 @@ export function registerRoutes(app: Express): Server {
         });
       }
     }
+  });
+
+  app.get("/api/articles/:slug", async (req, res) => {
+    const [article] = await db.query.articles.findMany({
+      where: eq(articles.slug, req.params.slug),
+      with: {
+        author: true,
+        restaurants: {
+          with: {
+            restaurant: true,
+          },
+        },
+      },
+    });
+
+    if (!article) return res.sendStatus(404);
+
+    // Transform the response
+    const transformedArticle = {
+      ...article,
+      content: typeof article.content === 'string'
+        ? JSON.parse(article.content)
+        : article.content,
+      restaurants: article.restaurants
+        .sort((a, b) => a.order - b.order)
+        .map(ar => ({
+          ...ar.restaurant,
+          description: ar.description,
+          order: ar.order,
+        })),
+    };
+
+    console.log('Retrieved article with content:', transformedArticle.content);
+    res.json(transformedArticle);
   });
 
   app.delete("/api/articles/:id", async (req, res) => {
