@@ -172,9 +172,16 @@ export function registerRoutes(app: Express): Server {
             );
         }
 
-        return updatedArticle;
+        // Parse the content before returning
+        return {
+          ...updatedArticle,
+          content: typeof updatedArticle.content === 'string'
+            ? JSON.parse(updatedArticle.content)
+            : updatedArticle.content
+        };
       });
 
+      console.log('Updated article, returning:', article);
       res.json(article);
     } catch (error: any) {
       console.error('Error updating article:', error);

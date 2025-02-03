@@ -72,8 +72,8 @@ export default function EditArticlePage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
-    // Initial state for editor content
-  const [editorContent, setEditorContent] = useState(null);
+  // Initial state for editor content
+  const [editorContent, setEditorContent] = useState<any>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
 
@@ -100,7 +100,6 @@ export default function EditArticlePage() {
   });
 
 
-  // Update form values when article data is loaded
   useEffect(() => {
     if (article) {
       console.log('Loading article data:', article);
