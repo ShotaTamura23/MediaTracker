@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { insertArticleSchema, type InsertArticle, type SelectRestaurant } from "@db/schema";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import TipTapEditor from "@/components/editor/tiptap-editor";
@@ -39,38 +39,27 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const editArticleSchema = insertArticleSchema.omit({
-  id: true,
-  authorId: true,
-  createdAt: true,
-  updatedAt: true,
+const editArticleSchema = z.object({
+  title: z.string().min(1, "タイトルは必須です"),
+  slug: z.string().min(1, "スラッグは必須です"),
+  content: z.any(),
+  excerpt: z.string().min(1, "抜粋は必須です"),
+  coverImage: z.string().min(1, "カバー画像は必須です"),
+  type: z.enum(["review", "list"]),
+  published: z.boolean().default(false),
 });
 
-const defaultEditorContent = {
-  type: "doc",
-  content: [
-    {
-      type: "paragraph",
-      content: [{ type: "text", text: "" }]
-    }
-  ]
-};
-
-type SelectedRestaurant = SelectRestaurant & {
-  description?: string;
-  order: number;
-};
+type FormValues = z.infer<typeof editArticleSchema>;
 
 export default function EditArticlePage() {
-  const [, params] = useRoute("/admin/articles/edit/:id");
+  const [match, params] = useRoute("/admin/articles/edit/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [selectedRestaurants, setSelectedRestaurants] = useState<SelectedRestaurant[]>([]);
-  const [restaurantDialogOpen, setRestaurantDialogOpen] = useState(false);
+  const [selectedRestaurants, setSelectedRestaurants] = useState<Array<SelectRestaurant & { description?: string; order: number }>>([]);
 
-  const { data: article } = useQuery({
+  const { data: article, isLoading: isLoadingArticle } = useQuery({
     queryKey: [`/api/articles/${params?.id}`],
   });
 
@@ -78,14 +67,14 @@ export default function EditArticlePage() {
     queryKey: ["/api/restaurants"],
   });
 
-  const form = useForm<z.infer<typeof editArticleSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(editArticleSchema),
     defaultValues: {
       title: article?.title || "",
       slug: article?.slug || "",
       content: article?.content ? 
         (typeof article.content === 'string' ? JSON.parse(article.content) : article.content) : 
-        defaultEditorContent,
+        { type: "doc", content: [{ type: "paragraph", content: [{ text: "" }] }] },
       excerpt: article?.excerpt || "",
       coverImage: article?.coverImage || "",
       type: article?.type || "review",
@@ -93,38 +82,8 @@ export default function EditArticlePage() {
     },
   });
 
-  const handleAddRestaurant = (restaurant: SelectRestaurant) => {
-    const articleType = form.watch("type");
-    if (articleType === "review" && selectedRestaurants.length > 0) {
-      // レビュー記事の場合は1つのレストランのみ
-      setSelectedRestaurants([{ ...restaurant, order: 0, description: "" }]);
-    } else {
-      // リスト記事の場合は複数のレストランを追加可能
-      setSelectedRestaurants([
-        ...selectedRestaurants,
-        { ...restaurant, order: selectedRestaurants.length, description: "" },
-      ]);
-    }
-  };
-
-  const handleRemoveRestaurant = (restaurantId: number) => {
-    setSelectedRestaurants(
-      selectedRestaurants
-        .filter((r) => r.id !== restaurantId)
-        .map((r, index) => ({ ...r, order: index }))
-    );
-  };
-
-  const handleRestaurantDescriptionChange = (restaurantId: number, description: string) => {
-    setSelectedRestaurants(
-      selectedRestaurants.map((r) =>
-        r.id === restaurantId ? { ...r, description } : r
-      )
-    );
-  };
-
   const mutation = useMutation({
-    mutationFn: async (values: any) => {
+    mutationFn: async (values: FormValues) => {
       if (!params?.id) throw new Error("Article ID is required");
 
       const articleData = {
@@ -156,16 +115,40 @@ export default function EditArticlePage() {
     },
   });
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-        form.setValue("coverImage", reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  if (isLoadingArticle) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const handleAddRestaurant = (restaurant: SelectRestaurant) => {
+    const articleType = form.watch("type");
+    if (articleType === "review" && selectedRestaurants.length > 0) {
+      setSelectedRestaurants([{ ...restaurant, order: 0, description: "" }]);
+    } else {
+      setSelectedRestaurants([
+        ...selectedRestaurants,
+        { ...restaurant, order: selectedRestaurants.length, description: "" },
+      ]);
     }
+  };
+
+  const handleRemoveRestaurant = (restaurantId: number) => {
+    setSelectedRestaurants(
+      selectedRestaurants
+        .filter((r) => r.id !== restaurantId)
+        .map((r, index) => ({ ...r, order: index }))
+    );
+  };
+
+  const handleRestaurantDescriptionChange = (restaurantId: number, description: string) => {
+    setSelectedRestaurants(
+      selectedRestaurants.map((r) =>
+        r.id === restaurantId ? { ...r, description } : r
+      )
+    );
   };
 
   const articleType = form.watch('type');
@@ -257,7 +240,6 @@ export default function EditArticlePage() {
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            // タイプが変更された場合、選択されたレストランをリセット
                             setSelectedRestaurants([]);
                           }}
                           defaultValue={field.value}
