@@ -70,6 +70,7 @@ export default function AdminRestaurants() {
     lng: number;
   } | null>(null);
   const [editingRestaurant, setEditingRestaurant] = useState<SelectRestaurant | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const { data: restaurants, refetch } = useQuery<SelectRestaurant[]>({
     queryKey: ["/api/restaurants"],
@@ -196,6 +197,7 @@ export default function AdminRestaurants() {
       lat: parseFloat(restaurant.latitude),
       lng: parseFloat(restaurant.longitude),
     });
+    setDialogOpen(true);
   };
 
   const handleSubmit = (data: any) => {
@@ -209,13 +211,22 @@ export default function AdminRestaurants() {
     }
   };
 
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingRestaurant(null);
+      form.reset();
+      setSelectedLocation(null);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">レストラン管理</h1>
-        <Dialog onOpenChange={(open) => !open && setEditingRestaurant(null)}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setDialogOpen(true)}>
               <PlusCircle className="h-4 w-4 mr-2" />
               新規登録
             </Button>
@@ -385,6 +396,13 @@ export default function AdminRestaurants() {
                 </div>
 
                 <div className="flex justify-end gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleDialogClose(false)}
+                  >
+                    キャンセル
+                  </Button>
                   <Button type="submit">
                     {editingRestaurant ? "更新" : "登録"}
                   </Button>
@@ -413,7 +431,7 @@ export default function AdminRestaurants() {
                 <TableCell className="font-medium">{restaurant.name}</TableCell>
                 <TableCell>{restaurant.cuisine_type}</TableCell>
                 <TableCell>{restaurant.price_range}</TableCell>
-                 <TableCell>
+                <TableCell>
                   <Badge
                     variant="outline"
                     className={statusColors[restaurant.status as keyof typeof statusColors]}
