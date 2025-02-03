@@ -7,17 +7,21 @@ import { Loader2 } from "lucide-react";
 
 interface RestaurantMapProps {
   publishedOnly?: boolean;
+  restaurants?: SelectRestaurant[];
 }
 
-export default function RestaurantMap({ publishedOnly = false }: RestaurantMapProps) {
+export default function RestaurantMap({ publishedOnly = false, restaurants: propRestaurants }: RestaurantMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const { data: restaurants } = useQuery<SelectRestaurant[]>({
+  const { data: fetchedRestaurants } = useQuery<SelectRestaurant[]>({
     queryKey: [publishedOnly ? "/api/restaurants/published" : "/api/restaurants"],
+    enabled: !propRestaurants, // Only fetch if restaurants are not provided via props
   });
 
+  const restaurants = propRestaurants || fetchedRestaurants;
+
   useEffect(() => {
-    if (!mapRef.current || !restaurants) return;
+    if (!mapRef.current || !restaurants?.length) return;
 
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
@@ -77,7 +81,7 @@ export default function RestaurantMap({ publishedOnly = false }: RestaurantMapPr
                 <span class="px-2 py-1 bg-primary/10 rounded-full text-xs font-medium">#${index + 1}</span>
                 <h3 class="text-lg font-bold">${restaurant.name}</h3>
               </div>
-              <p class="text-sm mb-2">${restaurant.description}</p>
+              <p class="text-sm mb-2">${restaurant.description || ''}</p>
               <div class="space-y-1 text-sm text-gray-600">
                 <p>${restaurant.address}</p>
                 ${restaurant.phone ? `<p>${restaurant.phone}</p>` : ''}

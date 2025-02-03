@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { SelectArticle, SelectRestaurant } from "@db/schema";
 import { ImagePlus, Plus, X } from "lucide-react";
 import {
@@ -75,6 +76,7 @@ type SelectedRestaurant = SelectRestaurant & {
 
 export default function ArticleEditor({ article, onClose }: ArticleEditorProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedRestaurants, setSelectedRestaurants] = useState<SelectedRestaurant[]>(
     article?.restaurants || []
   );
@@ -156,7 +158,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
         title: "Success",
         description: `記事を${article ? "更新" : "作成"}しました。`,
       });
-      onClose();
+      setLocation("/admin/articles");
     },
     onError: (error) => {
       toast({
@@ -173,6 +175,12 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((values) => mutation.mutate(values))} className="space-y-6">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {article ? "記事を編集" : "新規記事を作成"}
+            </DialogTitle>
+          </DialogHeader>
         {/* 基本情報フォーム */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
@@ -509,6 +517,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
             {mutation.isPending ? "保存中..." : "保存"}
           </Button>
         </div>
+      </DialogContent>
       </form>
     </Form>
   );
