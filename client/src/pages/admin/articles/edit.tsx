@@ -51,6 +51,7 @@ const editArticleSchema = z.object({
   coverImage: z.string().min(1, "カバー画像は必須です"),
   type: z.enum(["review", "list"]),
   published: z.boolean().default(false),
+  isNewOpening: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof editArticleSchema>;
@@ -64,6 +65,7 @@ type ArticleResponse = {
   coverImage: string;
   type: "review" | "list";
   published: boolean;
+  isNewOpening: boolean;
   restaurants?: Array<SelectRestaurant & { description?: string; order: number }>;
 };
 
@@ -95,6 +97,7 @@ export default function EditArticlePage() {
       coverImage: "",
       type: "review",
       published: false,
+      isNewOpening: false,
     }
   });
 
@@ -125,6 +128,7 @@ export default function EditArticlePage() {
         coverImage: article.coverImage,
         type: article.type,
         published: article.published,
+        isNewOpening: article.isNewOpening,
       });
 
       setPreviewImage(article.coverImage);
@@ -431,6 +435,28 @@ export default function EditArticlePage() {
                         </FormItem>
                       )}
                     />
+                    {articleType === "review" && (
+                      <FormField
+                        control={form.control}
+                        name="isNewOpening"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-0.5">
+                              <FormLabel>新着店舗リストに表示</FormLabel>
+                              <div className="text-sm text-muted-foreground">
+                                このチェックを入れると、新着店舗一覧ページに表示されます
+                              </div>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </TabsContent>
 
                   <TabsContent value="restaurants" className="space-y-6">
