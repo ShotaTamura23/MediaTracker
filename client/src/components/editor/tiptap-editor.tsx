@@ -48,7 +48,10 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
         },
       }),
     ],
-    content,
+    content: content || {
+      type: 'doc',
+      content: [{ type: 'paragraph' }]
+    },
     editable,
     editorProps: {
       attributes: {
@@ -61,7 +64,7 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
         onChange(json);
       }
     },
-  });
+  }, [content]);
 
   if (!editor) {
     return null;
