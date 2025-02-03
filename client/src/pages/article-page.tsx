@@ -22,6 +22,41 @@ export default function ArticlePage() {
     queryKey: [`/api/articles/${params?.slug}`],
   });
 
+  const bookmarkMutation = useMutation({
+    mutationFn: async () => {
+      if (!article) return;
+      await apiRequest("POST", "/api/bookmarks", { articleId: article.id });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
+      toast({
+        title: "記事をブックマークに追加しました",
+        description: "マイページのブックマークから確認できます。",
+      });
+    },
+  });
+
+  const handleShare = async () => {
+    if (!article) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: article.title,
+          text: article.excerpt,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "リンクをコピーしました",
+        description: "記事のURLをクリップボードにコピーしました",
+      });
+    }
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -42,42 +77,6 @@ export default function ArticlePage() {
     setLocation("/not-found");
     return null;
   }
-
-  const bookmarkMutation = useMutation({
-    mutationFn: async () => {
-      if (!article) return;
-      await apiRequest("POST", "/api/bookmarks", { articleId: article.id });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/bookmarks"] });
-      toast({
-        title: "記事をブックマークに追加しました",
-        description: "マイページのブックマークから確認できます。",
-      });
-    },
-  });
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: article?.title,
-          text: article?.excerpt,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error("Error sharing:", err);
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "リンクをコピーしました",
-        description: "記事のURLをクリップボードにコピーしました",
-      });
-    }
-  };
-
-  if (!article) return null;
 
   // Parse the JSON content
   const content = typeof article.content === 'string'
