@@ -72,7 +72,10 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
             variant="ghost"
             size="icon"
             className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-            onClick={() => !bookmarkMutation.isPending && bookmarkMutation.mutate()}
+            onClick={(e) => {
+              e.preventDefault(); // Prevent link click when clicking bookmark button
+              !bookmarkMutation.isPending && bookmarkMutation.mutate();
+            }}
             disabled={bookmarkMutation.isPending}
           >
             <Bookmark
@@ -86,26 +89,28 @@ export default function ArticleCard({ article, isBookmarked }: ArticleCardProps)
       </div>
       <CardContent className="p-4">
         <Link href={`/article/${article.slug}`}>
-          <h3 className="text-xl font-semibold mb-2 hover:text-primary cursor-pointer">
-            {article.title}
-          </h3>
-        </Link>
-        <p className="text-muted-foreground line-clamp-2 mb-3">{article.excerpt}</p>
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {new Date(article.createdAt).toLocaleDateString()}
-            </span>
-            {getRestaurantText() && (
-              <Badge variant="secondary" className="text-xs">
-                {getRestaurantText()}
+          <a className="block">
+            <h3 className="text-xl font-semibold mb-2 hover:text-primary">
+              {article.title}
+            </h3>
+            <p className="text-muted-foreground line-clamp-2 mb-3">{article.excerpt}</p>
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {new Date(article.createdAt).toLocaleDateString()}
+                </span>
+                {getRestaurantText() && (
+                  <Badge variant="secondary" className="text-xs">
+                    {getRestaurantText()}
+                  </Badge>
+                )}
+              </div>
+              <Badge className="capitalize">
+                {article.type === "review" ? "レビュー" : article.type === "list" ? "リスト" : "エッセイ"}
               </Badge>
-            )}
-          </div>
-          <Badge className="capitalize">
-            {article.type === "review" ? "レビュー" : article.type === "list" ? "リスト" : "エッセイ"}
-          </Badge>
-        </div>
+            </div>
+          </a>
+        </Link>
       </CardContent>
     </Card>
   );
