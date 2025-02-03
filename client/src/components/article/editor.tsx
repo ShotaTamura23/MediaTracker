@@ -52,6 +52,16 @@ type ContentBlock = {
   };
 };
 
+const defaultContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [{ text: "" }]
+    }
+  ]
+};
+
 export default function ArticleEditor({ article, onClose }: ArticleEditorProps) {
   const { toast } = useToast();
 
@@ -63,7 +73,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
       excerpt: article?.excerpt || "",
       content: article?.content ? 
         (typeof article.content === 'string' ? JSON.parse(article.content) : article.content) : 
-        { type: "doc", content: [] },
+        defaultContent,
       coverImage: article?.coverImage || "",
       type: article?.type || "review",
       published: article?.published || false,
@@ -71,7 +81,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
   });
 
   const addContentBlock = (type: ContentBlock['type']) => {
-    const content = form.getValues('content');
+    const content = form.getValues('content') || defaultContent;
     const newBlock: ContentBlock = type === 'paragraph' 
       ? { type: 'paragraph', content: [{ text: '' }] }
       : type === 'image' 
@@ -80,19 +90,21 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
 
     form.setValue('content', {
       ...content,
-      content: [...content.content, newBlock],
+      content: [...(content.content || []), newBlock],
     });
   };
 
   const removeContentBlock = (index: number) => {
-    const content = form.getValues('content');
-    content.content.splice(index, 1);
-    form.setValue('content', content);
+    const content = form.getValues('content') || defaultContent;
+    const newContent = [...content.content];
+    newContent.splice(index, 1);
+    form.setValue('content', { ...content, content: newContent });
   };
 
   const updateBlockContent = (index: number, field: string, value: string) => {
-    const content = form.getValues('content');
-    const block = content.content[index];
+    const content = form.getValues('content') || defaultContent;
+    const newContent = [...content.content];
+    const block = newContent[index];
 
     if (block.type === 'paragraph' || block.type === 'heading') {
       block.content = [{ text: value }];
@@ -100,7 +112,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
       block.attrs = { ...block.attrs, [field]: value };
     }
 
-    form.setValue('content', content);
+    form.setValue('content', { ...content, content: newContent });
   };
 
   const mutation = useMutation({
@@ -128,7 +140,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
     },
   });
 
-  const content = form.watch('content');
+  const content = form.watch('content') || defaultContent;
   const articleType = form.watch('type');
 
   return (
@@ -276,7 +288,7 @@ export default function ArticleEditor({ article, onClose }: ArticleEditorProps) 
           </div>
 
           <div className="space-y-4">
-            {content.content.map((block: ContentBlock, index: number) => (
+            {content.content && content.content.map((block: ContentBlock, index: number) => (
               <div key={index} className="relative border rounded-lg p-4">
                 <Button
                   type="button"
