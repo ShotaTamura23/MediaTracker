@@ -6,12 +6,13 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
-// Improved error logging middleware
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Capture JSON responses for logging
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
@@ -25,11 +26,6 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
       log(logLine);
     }
   });
@@ -38,33 +34,35 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = registerRoutes(app);
+  try {
+    const server = registerRoutes(app);
 
-  // Enhanced error handling middleware
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Server Error:', err);
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Global error handling middleware
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      console.error('Server Error:', err);
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ 
-      message,
-      error: err.code ? { code: err.code, detail: err.detail } : undefined
+      res.status(status).json({
+        message,
+        error: err.code ? { code: err.code, detail: err.detail } : undefined
+      });
     });
-  });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+    // Set up Vite in development mode
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+
+    // Start the server
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, "0.0.0.0", () => {
+      log(`Server is running on http://0.0.0.0:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`Server is running on http://0.0.0.0:${PORT}`);
-  });
 })();
