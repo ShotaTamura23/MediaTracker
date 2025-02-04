@@ -218,7 +218,7 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
           <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
-      <div className="p-4">
+      <div className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none min-h-[200px] p-4">
         <EditorContent editor={editor} />
       </div>
     </div>
