@@ -232,7 +232,10 @@ pnpm start
    - `DATABASE_URL`（Supabaseの接続文字列）
    - `SESSION_SECRET`（ランダムな文字列）
    - `NODE_ENV`を`production`に設定
-7. プロジェクトルートに`vercel.json`を作成し、以下の内容を追加:
+7. プロジェクトルートに`api/[...path].ts`を作成:
+   - このファイルにAPIハンドラーを実装
+   - Express.jsのルートをVercelのサーバーレス関数として設定
+8. プロジェクトルートに`vercel.json`を作成:
 ```json
 {
   "rewrites": [
@@ -242,14 +245,21 @@ pnpm start
     }
   ],
   "functions": {
-    "api/**/*": {
+    "api/[...path].ts": {
       "memory": 1024,
       "maxDuration": 10
     }
   }
 }
 ```
-8. 「Deploy」をクリック
+9. 「Deploy」をクリック
+
+### 重要な注意点：
+- APIハンドラーファイル（`api/[...path].ts`）はVercelのサーバーレス関数として動作します
+- データベースの接続文字列は必ずSupabaseの接続情報を使用してください
+- セッションの秘密鍵（SESSION_SECRET）は32文字以上のランダムな文字列を使用してください
+- デプロイ後、各APIエンドポイントが正しく動作することを確認してください
+
 
 ### 2. データベース (Supabase)
 
