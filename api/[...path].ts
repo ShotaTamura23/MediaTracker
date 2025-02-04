@@ -29,6 +29,27 @@ app.use(express.urlencoded({ extended: true }));
 // Setup authentication after session
 setupAuth(app);
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// Error handling middleware
+app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error details:', {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    code: err.code
+  });
+  res.status(500).json({
+    error: 'Internal server error',
+    details: err instanceof Error ? err.message : 'Unknown error'
+  });
+  next(err);
+});
+
 // API routes with proper error handling
 app.get('/api/articles', async (_req, res) => {
   try {
@@ -49,7 +70,8 @@ app.get('/api/articles', async (_req, res) => {
     console.error('Error fetching articles:', error);
     res.status(500).json({ 
       error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      path: '/api/articles'
     });
   }
 });
@@ -66,7 +88,8 @@ app.get('/api/restaurants', async (_req, res) => {
     console.error('Error fetching restaurants:', error);
     res.status(500).json({ 
       error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      path: '/api/restaurants'
     });
   }
 });
@@ -85,7 +108,8 @@ app.get('/api/user', (req, res) => {
     console.error('Error in user endpoint:', error);
     res.status(500).json({ 
       error: 'Internal server error', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      path: '/api/user'
     });
   }
 });
@@ -95,41 +119,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Test database connection
     console.log('Testing database connection...');
+    console.log('Environment:', process.env.NODE_ENV);
     console.log('Environment variables check:');
     console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-    console.log('- SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'Not set');
-    console.log('- SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Set' : 'Not set');
+    console.log('- SESSION_SECRET:', process.env.SESSION_SECRET ? 'Set' : 'Not set');
 
     const isConnected = await checkDatabaseConnection();
     if (!isConnected) {
       throw new Error('Database connection test failed');
     }
+
+    return new Promise((resolve, reject) => {
+      console.log(`API request received: ${req.method} ${req.url}`);
+      app(req, res, (err: any) => {
+        if (err) {
+          console.error('API Handler Error:', err);
+          res.status(500).json({ 
+            error: 'Internal server error', 
+            details: err instanceof Error ? err.message : 'Unknown error',
+            path: req.url
+          });
+          return reject(err);
+        }
+        resolve(undefined);
+      });
+    });
   } catch (error) {
-    console.error('Database connection test failed:', error);
+    console.error('Request handler error:', error);
     return res.status(500).json({ 
-      error: 'Database connection failed', 
+      error: 'Server initialization failed', 
       details: error instanceof Error ? error.message : 'Unknown error',
       env: {
         nodeEnv: process.env.NODE_ENV,
         hasDbUrl: !!process.env.DATABASE_URL,
-        hasSupabaseUrl: !!process.env.SUPABASE_URL,
-        hasSupabaseKey: !!process.env.SUPABASE_KEY
+        hasSessionSecret: !!process.env.SESSION_SECRET
       }
     });
   }
-
-  return new Promise((resolve, reject) => {
-    console.log(`API request received: ${req.method} ${req.url}`);
-    app(req, res, (err: any) => {
-      if (err) {
-        console.error('API Handler Error:', err);
-        res.status(500).json({ 
-          error: 'Internal server error', 
-          details: err instanceof Error ? err.message : 'Unknown error' 
-        });
-        return reject(err);
-      }
-      resolve(undefined);
-    });
-  });
 }
