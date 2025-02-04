@@ -16,7 +16,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 5000,
   max: 1,
-  ssl: true
+  ssl: process.env.NODE_ENV === 'production'
 });
 
 // Add error handling for the pool
@@ -28,14 +28,16 @@ pool.on('error', (err) => {
 // Add connection logging
 pool.on('connect', () => {
   console.log('New database connection established');
+  console.log('Environment:', process.env.NODE_ENV);
+  console.log('Database URL format valid:', !!process.env.DATABASE_URL);
 });
 
-pool.on('acquire', (client: any) => {
-  console.log('Connection acquired from pool:', client?.processID);
+pool.on('acquire', () => {
+  console.log('Connection acquired from pool');
 });
 
-pool.on('remove', (client: any) => {
-  console.log('Connection removed from pool:', client?.processID);
+pool.on('remove', () => {
+  console.log('Connection removed from pool');
 });
 
 // Initialize Drizzle with the pool
@@ -55,6 +57,13 @@ export async function checkDatabaseConnection() {
     return true;
   } catch (error) {
     console.error('Database connection failed:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      });
+    }
     return false;
   }
 }
