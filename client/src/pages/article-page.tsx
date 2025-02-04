@@ -10,6 +10,7 @@ import { SelectArticle } from "@db/schema";
 import { apiRequest } from "@/lib/queryClient";
 import RestaurantMap from "@/components/maps/restaurant-map";
 import { cn } from "@/lib/utils";
+import TipTapEditor from "@/components/editor/tiptap-editor";
 
 export default function ArticlePage() {
   const [, params] = useRoute("/article/:slug");
@@ -78,7 +79,7 @@ export default function ArticlePage() {
     return null;
   }
 
-  // Parse the JSON content
+  // JSONコンテンツの解析処理を修正
   const content = typeof article.content === 'string'
     ? JSON.parse(article.content)
     : article.content;
@@ -236,33 +237,12 @@ export default function ArticlePage() {
               </Card>
             )}
 
+            {/* 記事本文の表示部分を修正 */}
             <div className="prose prose-lg max-w-none">
-              {content.content.map((block: any, index: number) => {
-                if (block.type === 'paragraph') {
-                  return (
-                    <p key={index} className="mb-6">
-                      {block.content[0].text}
-                    </p>
-                  );
-                }
-                if (block.type === 'image') {
-                  return (
-                    <figure key={index} className="my-12">
-                      <img
-                        src={block.attrs.src}
-                        alt={block.attrs.alt || ''}
-                        className="w-full rounded-lg"
-                      />
-                      {block.attrs.caption && (
-                        <figcaption className="mt-3 text-sm text-muted-foreground text-center">
-                          {block.attrs.caption}
-                        </figcaption>
-                      )}
-                    </figure>
-                  );
-                }
-                return null;
-              })}
+              <TipTapEditor 
+                content={content}
+                editable={false}
+              />
             </div>
           </div>
 
