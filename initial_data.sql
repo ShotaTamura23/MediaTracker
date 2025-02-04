@@ -17,12 +17,12 @@ SET row_security = off;
 --
 
 -- Drop tables if they exist
-DROP TABLE IF EXISTS bookmarks;
-DROP TABLE IF EXISTS article_restaurants;
-DROP TABLE IF EXISTS newsletters;
-DROP TABLE IF EXISTS articles;
-DROP TABLE IF EXISTS restaurants;
-DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS bookmarks CASCADE;
+DROP TABLE IF EXISTS article_restaurants CASCADE;
+DROP TABLE IF EXISTS newsletters CASCADE;
+DROP TABLE IF EXISTS articles CASCADE;
+DROP TABLE IF EXISTS restaurants CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
 
 --
 -- Create tables
@@ -99,20 +99,42 @@ INSERT INTO users (username, password, email, is_admin)
 VALUES ('admin', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', 'admin@example.com', true);
 
 -- Sample restaurants
-INSERT INTO restaurants (name, description, address, latitude, longitude, cuisine_type, price_range, status)
+INSERT INTO restaurants (name, description, address, latitude, longitude, cuisine_type, price_range, status, website, phone)
 VALUES 
-('Sushi Express', 'Authentic sushi restaurant in central London', '123 Oxford Street, London', '51.5074', '-0.1278', 'sushi', 'moderate', 'published'),
-('Ramen House', 'Traditional Japanese ramen shop', '45 Baker Street, London', '51.5204', '-0.1568', 'ramen', 'budget', 'published');
+('Sushi Express', 'ロンドン中心部の本格的な寿司レストラン。新鮮な魚介類と熟練した職人の技が光ります。', '123 Oxford Street, London', '51.5074', '-0.1278', 'sushi', 'moderate', 'published', 'https://example.com/sushi-express', '+44 20 1234 5678'),
+('Ramen House', '伝統的な日本のラーメン店。濃厚な豚骨スープが特徴です。', '45 Baker Street, London', '51.5204', '-0.1568', 'ramen', 'budget', 'published', 'https://example.com/ramen-house', '+44 20 2345 6789'),
+('Izakaya Joy', '本格的な居酒屋。日本の伝統的な料理と現代的なフュージョン料理を提供。', '78 Dean Street, London', '51.5147', '-0.1359', 'izakaya', 'expensive', 'published', 'https://example.com/izakaya-joy', '+44 20 3456 7890');
 
 -- Sample articles
 INSERT INTO articles (title, slug, content, excerpt, cover_image, author_id, published, type)
 VALUES 
-('Best Sushi in London', 'best-sushi-london', 
-'{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Discover the best sushi restaurants in London"}]}]}',
-'A guide to London''s finest sushi establishments', 
+('ロンドン最高の寿司', 'best-sushi-london', 
+'{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"ロンドンで最高の寿司を提供するレストランをご紹介します。新鮮な魚介類と熟練した職人の技が光る、本格的な寿司の世界をお楽しみください。"}]}]}',
+'ロンドンの最高級寿司店ガイド', 
 'https://example.com/sushi-cover.jpg', 
+1, true, 'review'),
+
+('ロンドンのおすすめラーメン5選', 'top-5-ramen-london',
+'{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"ロンドンで本場の味を楽しめるラーメン店を厳選してご紹介。濃厚な豚骨から あっさりした醤油まで、様々なスープをお楽しみいただけます。"}]}]}',
+'本場の味を楽しめるロンドンのラーメン店ガイド',
+'https://example.com/ramen-cover.jpg',
 1, true, 'list');
 
--- Sample article-restaurant relation
-INSERT INTO article_restaurants (article_id, restaurant_id, "order")
-VALUES (1, 1, 0);
+-- Sample article-restaurant relations
+INSERT INTO article_restaurants (article_id, restaurant_id, "order", description)
+VALUES 
+(1, 1, 0, 'ロンドンで最も本格的な寿司を味わえる店舗です。'),
+(2, 2, 0, '濃厚な豚骨スープが特徴の人気店。');
+
+-- Sample newsletter subscriptions
+INSERT INTO newsletters (email, confirmed)
+VALUES 
+('subscriber1@example.com', true),
+('subscriber2@example.com', true),
+('pending@example.com', false);
+
+-- Sample bookmarks
+INSERT INTO bookmarks (user_id, article_id)
+VALUES 
+(1, 1),
+(1, 2);
