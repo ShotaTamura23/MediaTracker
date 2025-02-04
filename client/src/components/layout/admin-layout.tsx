@@ -4,7 +4,7 @@ import {
   BookOpen,
   Store,
   LayoutDashboard,
-  Settings,
+  Mail,
 } from "lucide-react";
 
 const menuItems = [
@@ -24,9 +24,9 @@ const menuItems = [
     icon: Store,
   },
   {
-    title: "設定",
-    href: "/admin/settings",
-    icon: Settings,
+    title: "ニュースレター",
+    href: "/admin/newsletter",
+    icon: Mail,
   },
 ];
 
