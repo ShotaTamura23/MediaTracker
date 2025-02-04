@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
 } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface TipTapEditorProps {
   content: any;
@@ -55,7 +56,7 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
     editable,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose dark:prose-invert focus:outline-none',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none',
       },
     },
     onUpdate: ({ editor }) => {
@@ -64,7 +65,14 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
         onChange(json);
       }
     },
-  }, [content]);
+  }, [content, editable]);
+
+  // Update editor's editable state when the prop changes
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
 
   if (!editor) {
     return null;
