@@ -49,30 +49,34 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
         },
       }),
     ],
-    content: content || {
+    content: content ?? {
       type: 'doc',
       content: [{ type: 'paragraph' }]
     },
-    editable,
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none min-h-[200px] p-4',
       },
     },
     onUpdate: ({ editor }) => {
       if (onChange) {
-        const json = editor.getJSON();
-        onChange(json);
+        onChange(editor.getJSON());
       }
     },
-  }, [content, editable]);
+    editable,
+  });
 
-  // Update editor's editable state when the prop changes
   useEffect(() => {
-    if (editor) {
+    if (editor && !editor.isDestroyed) {
       editor.setEditable(editable);
     }
   }, [editor, editable]);
+
+  useEffect(() => {
+    if (editor && !editor.isDestroyed && content) {
+      editor.commands.setContent(content);
+    }
+  }, [editor, content]);
 
   if (!editor) {
     return null;
@@ -97,7 +101,9 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
         const reader = new FileReader();
         reader.onload = (e) => {
           const result = e.target?.result as string;
-          editor.chain().focus().setImage({ src: result }).run();
+          if (editor && !editor.isDestroyed) {
+            editor.chain().focus().setImage({ src: result }).run();
+          }
         };
         reader.readAsDataURL(file);
       }
@@ -106,6 +112,8 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
   };
 
   const setLink = () => {
+    if (!editor || editor.isDestroyed) return;
+
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URLを入力してください:', previousUrl);
 
@@ -210,10 +218,9 @@ export default function TipTapEditor({ content, onChange, editable = true }: Tip
           <LinkIcon className="h-4 w-4" />
         </Button>
       </div>
-      <EditorContent 
-        editor={editor} 
-        className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl dark:prose-invert focus:outline-none min-h-[200px] p-4" 
-      />
+      <div className="p-4">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }
