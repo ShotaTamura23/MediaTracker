@@ -22,6 +22,7 @@ import EditArticle from "./pages/admin/articles/edit";
 import AdminLoginPage from "./pages/admin/login";
 import BookmarksPage from "./pages/bookmarks";
 import NotFound from "./pages/not-found";
+import NewsletterPage from "./pages/admin/newsletter";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <AdminRoute path="/admin/restaurants" component={AdminRestaurants} />
       <AdminRoute path="/admin/articles/create" component={CreateArticle} />
       <AdminRoute path="/admin/articles/edit/:id" component={EditArticle} />
+      <AdminRoute path="/admin/newsletter" component={NewsletterPage} />
       <Route component={NotFound} />
     </Switch>
   );
