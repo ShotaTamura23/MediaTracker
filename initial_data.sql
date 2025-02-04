@@ -13,10 +13,8 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: japanese_cuisine_db; Type: DATABASE; Schema: -; Owner: postgres
---
-
 -- Drop tables if they exist
+--
 DROP TABLE IF EXISTS bookmarks CASCADE;
 DROP TABLE IF EXISTS article_restaurants CASCADE;
 DROP TABLE IF EXISTS newsletters CASCADE;

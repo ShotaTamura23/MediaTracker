@@ -3,23 +3,20 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from 'ws';
 import * as schema from './schema';
 
-// Configure WebSocket for Neon database
+// Configure WebSocket for database
 neonConfig.webSocketConstructor = ws;
 
 // Validate database URL
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL must be set in the environment variables. Check your Vercel project settings.');
+  throw new Error('DATABASE_URL must be set in the environment variables');
 }
 
-// Create a new pool for serverless environment
+// Create a new pool optimized for serverless
 const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 5000, // 5 seconds
-  max: 1, // Limit connections for serverless
-  ssl: {
-    rejectUnauthorized: true,
-    // Supabaseの場合、追加のSSL設定は不要
-  }
+  connectionTimeoutMillis: 5000,
+  max: 1,
+  ssl: true
 });
 
 // Add error handling for the pool
@@ -33,12 +30,12 @@ pool.on('connect', () => {
   console.log('New database connection established');
 });
 
-pool.on('acquire', () => {
-  console.log('Connection acquired from pool');
+pool.on('acquire', (client: any) => {
+  console.log('Connection acquired from pool:', client?.processID);
 });
 
-pool.on('remove', () => {
-  console.log('Connection removed from pool');
+pool.on('remove', (client: any) => {
+  console.log('Connection removed from pool:', client?.processID);
 });
 
 // Initialize Drizzle with the pool
@@ -52,6 +49,8 @@ export async function checkDatabaseConnection() {
   try {
     const client = await pool.connect();
     console.log('Database connection successful');
+    const result = await client.query('SELECT NOW()');
+    console.log('Database query successful:', result.rows[0]);
     client.release();
     return true;
   } catch (error) {
