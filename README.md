@@ -214,28 +214,161 @@ pnpm build
 pnpm start
 ```
 
-## トラブルシューティング
+## 無料デプロイ方法
 
-### よくある問題と解決方法
+このプロジェクトは以下の無料サービスを組み合わせてデプロイできます：
 
-1. データベース接続エラー
-   - DATABASE_URLの形式を確認
-   - PostgreSQLサービスが起動していることを確認
-   - ユーザー名とパスワードが正しいか確認
+### 1. フロントエンド＆バックエンド (Vercel)
 
-2. 管理者ページにアクセスできない
-   - ユーザーが管理者権限を持っているか確認
-   - セッションが正常に機能しているか確認
-   - initial_data.sqlが正しくインポートされているか確認
+1. [Vercel](https://vercel.com)にGitHubアカウントでサインアップ
+2. 「New Project」をクリック
+3. GitHubリポジトリをインポート
+4. Framework Presetで「Other」を選択
+5. 「Build and Output Settings」を設定:
+   - Build Command: `npm run build`
+   - Output Directory: `dist/public`
+6. 環境変数を設定:
+   - `VITE_GOOGLE_MAPS_API_KEY`
+   - `DATABASE_URL`（Supabaseの接続文字列）
+   - `SESSION_SECRET`（ランダムな文字列）
+   - `NODE_ENV`を`production`に設定
+7. プロジェクトルートに`vercel.json`を作成し、以下の内容を追加:
+```json
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ],
+  "functions": {
+    "api/**/*": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
+```
+8. 「Deploy」をクリック
 
-3. 地図が表示されない
-   - Google Maps APIキーが正しく設定されているか確認
-   - APIキーの制限が適切に設定されているか確認
-   - VITE_GOOGLE_MAPS_API_KEYが.envファイルに正しく設定されているか確認
+### 2. データベース (Supabase)
 
-4. pnpmコマンドが認識されない
-   - Node.jsが正しくインストールされているか確認
-   - pnpmのグローバルインストールを再試行
+1. [Supabase](https://supabase.com)にGitHubアカウントでサインアップ
+2. 「New Project」をクリック
+3. 以下の設定を行う：
+   - Name: プロジェクト名
+   - Database Password: 安全なパスワードを設定
+   - Region: 最寄りのリージョン
+   - Pricing Plan: Free Tier
+4. 「Create New Project」をクリック
+5. プロジェクト作成後、データベースの接続情報を取得:
+   - Project Settings → Database
+   - Connection String をコピー
+6. デモデータのインポート:
+   - SQLエディタを開く
+   - 新しいクエリを作成
+   - `initial_data.sql`の内容をコピー＆ペースト
+   - 「Run」をクリック
+
+#### デモデータのインポート手順（詳細）
+
+1. Supabase SQLエディタでの実行:
+```sql
+-- 既存のテーブルが存在する場合は削除
+DROP TABLE IF EXISTS bookmarks CASCADE;
+DROP TABLE IF EXISTS article_restaurants CASCADE;
+DROP TABLE IF EXISTS newsletters CASCADE;
+DROP TABLE IF EXISTS articles CASCADE;
+DROP TABLE IF EXISTS restaurants CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- initial_data.sqlの内容を実行
+```
+
+2. データの確認:
+   - Table EditorでUsersテーブルを確認
+   - デモ管理者アカウントが作成されていることを確認:
+     - ユーザー名: admin
+     - パスワード: admin
+     - メール: admin@example.com
+
+3. トラブルシューティング:
+   - エラーが発生した場合は、各テーブルを個別に作成
+   - 外部キー制約のエラーが出た場合は、テーブルの作成順序を確認
+
+
+#### 環境変数の設定
+
+Vercelの環境変数に以下を設定します：
+
+```env
+# Supabase Database URL
+DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.[YOUR-PROJECT-ID].supabase.co:5432/postgres"
+
+# Google Maps
+VITE_GOOGLE_MAPS_API_KEY="your_google_maps_api_key"
+
+# Session Secret (32文字以上のランダムな文字列)
+SESSION_SECRET="your_random_secret_key"
+
+# Node Environment
+NODE_ENV="production"
+```
+
+### 注意点と制限事項
+
+#### Vercel Free Tier の制限:
+- サーバーレス関数の実行時間: 10秒まで
+- デプロイメント：
+  - 100 デプロイメント/日
+  - チーム全体で1000デプロイメント/月
+- 帯域幅: 100GB/月
+- ビルド時間: 最大45分
+- サーバーレス関数の同時実行数: 最大6
+
+#### Supabase Free Tier の制限:
+- データベースサイズ: 500MB
+- 同時接続数: 30
+- サーバーレス関数: 500,000回/月
+- データベースのバックアップ：週1回
+- Row制限なし
+- 帯域幅: 2GB/月
+- Auth Users: 50,000
+- Edge Functions実行時間: 2秒/関数
+
+### デプロイ後の確認事項
+
+1. フロントエンドの動作確認
+   - ページの表示
+   - 認証機能
+   - 地図の表示
+
+2. バックエンドの動作確認
+   - API エンドポイント
+   - データベース接続
+   - セッション管理
+
+3. データベースの確認
+   - テーブルの存在
+   - 初期データの確認
+   - クエリの実行
+
+### トラブルシューティング
+
+1. デプロイ失敗時
+   - Vercelのビルドログを確認
+   - 環境変数が正しく設定されているか確認
+   - `package.json`のスクリプトが正しいか確認
+
+2. データベース接続エラー
+   - Supabaseの接続文字列が正しいか確認
+   - IPアドレス制限が適切か確認
+   - SSL接続が有効か確認
+
+3. 認証エラー
+   - セッション設定を確認
+   - Cookieの設定を確認
+   - CORS設定を確認
 
 ## バックアップと復元
 
