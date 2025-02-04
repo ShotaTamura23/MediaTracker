@@ -16,7 +16,10 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   connectionTimeoutMillis: 5000, // 5 seconds
   max: 1, // Limit connections for serverless
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true } : undefined,
+  ssl: {
+    rejectUnauthorized: true,
+    // Supabaseの場合、追加のSSL設定は不要
+  }
 });
 
 // Add error handling for the pool
@@ -25,8 +28,34 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+// Add connection logging
+pool.on('connect', () => {
+  console.log('New database connection established');
+});
+
+pool.on('acquire', () => {
+  console.log('Connection acquired from pool');
+});
+
+pool.on('remove', () => {
+  console.log('Connection removed from pool');
+});
+
 // Initialize Drizzle with the pool
 export const db = drizzle(pool, { schema });
 
 // Export pool for potential direct usage
 export { pool };
+
+// Utility function to check database connection
+export async function checkDatabaseConnection() {
+  try {
+    const client = await pool.connect();
+    console.log('Database connection successful');
+    client.release();
+    return true;
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    return false;
+  }
+}
