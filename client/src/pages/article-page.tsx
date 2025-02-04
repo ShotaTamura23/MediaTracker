@@ -160,6 +160,16 @@ export default function ArticlePage() {
         <main className="container mx-auto px-4 py-8">
           <div className="grid lg:grid-cols-[1fr,400px] gap-8">
             <div className="space-y-6">
+              {/* Add article content section */}
+              <Card className="p-6">
+                <div className="prose prose-lg max-w-none">
+                  <TipTapEditor 
+                    content={content}
+                    editable={false}
+                  />
+                </div>
+              </Card>
+
               {article.restaurants.map((restaurant, index) => (
                 <Card key={restaurant.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="p-6">
