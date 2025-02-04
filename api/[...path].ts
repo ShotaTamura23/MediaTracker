@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import express from 'express';
 import { setupAuth } from '../server/auth';
-import { db } from '@db';
+import { db, checkDatabaseConnection } from '@db';
 import { articles, restaurants, users, newsletters } from '@db/schema';
 import { eq } from 'drizzle-orm';
 import session from 'express-session';
@@ -18,7 +18,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -28,16 +28,6 @@ app.use(express.urlencoded({ extended: true }));
 
 // Setup authentication after session
 setupAuth(app);
-
-// Error handling middleware
-app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Global error handler:', err);
-  res.status(500).json({ 
-    error: 'Internal server error', 
-    details: err instanceof Error ? err.message : 'Unknown error' 
-  });
-  next(err);
-});
 
 // API routes with proper error handling
 app.get('/api/articles', async (_req, res) => {
@@ -53,7 +43,7 @@ app.get('/api/articles', async (_req, res) => {
         }
       },
     });
-    console.log('Articles fetched successfully');
+    console.log('Articles fetched successfully:', allArticles.length);
     res.json(allArticles);
   } catch (error) {
     console.error('Error fetching articles:', error);
@@ -70,7 +60,7 @@ app.get('/api/restaurants', async (_req, res) => {
     const allRestaurants = await db.query.restaurants.findMany({
       where: eq(restaurants.status, 'published')
     });
-    console.log('Restaurants fetched successfully');
+    console.log('Restaurants fetched successfully:', allRestaurants.length);
     res.json(allRestaurants);
   } catch (error) {
     console.error('Error fetching restaurants:', error);
@@ -81,7 +71,7 @@ app.get('/api/restaurants', async (_req, res) => {
   }
 });
 
-// User endpoint
+// User endpoint with improved error handling
 app.get('/api/user', (req, res) => {
   try {
     console.log('Checking user authentication...');
@@ -103,15 +93,28 @@ app.get('/api/user', (req, res) => {
 // Handle all API routes with improved error handling
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
+    // Test database connection
     console.log('Testing database connection...');
-    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-    const connectionTest = await db.query.users.findFirst();
-    console.log('Database connection test successful:', connectionTest ? 'Data found' : 'No data found');
+    console.log('Environment variables check:');
+    console.log('- DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+    console.log('- SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'Not set');
+    console.log('- SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Set' : 'Not set');
+
+    const isConnected = await checkDatabaseConnection();
+    if (!isConnected) {
+      throw new Error('Database connection test failed');
+    }
   } catch (error) {
     console.error('Database connection test failed:', error);
     return res.status(500).json({ 
       error: 'Database connection failed', 
-      details: error instanceof Error ? error.message : 'Unknown error' 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      env: {
+        nodeEnv: process.env.NODE_ENV,
+        hasDbUrl: !!process.env.DATABASE_URL,
+        hasSupabaseUrl: !!process.env.SUPABASE_URL,
+        hasSupabaseKey: !!process.env.SUPABASE_KEY
+      }
     });
   }
 
